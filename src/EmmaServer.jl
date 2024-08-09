@@ -1,5 +1,5 @@
 module EmmaServer
-export testfn1, testfn2, task_testfn1, task_testfn2, init, get_args, main, logger
+export task_emma, init_workers, get_args, main, logger
 
 
 include("cmd.jl")
