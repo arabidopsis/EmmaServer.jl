@@ -9,12 +9,6 @@ git-tree-sha1 = "2d9c9a55f9c93e8887ad391fbae72f8ef55e1177"
 uuid = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 version = "0.4.5"
 
-[[deps.ArgMacros]]
-deps = ["TextWrap"]
-git-tree-sha1 = "d56b520cf879f431c0164fd05197efcf754e13bb"
-uuid = "dbc42088-9de8-42a0-8ec8-2cd114e1ea3e"
-version = "0.2.4"
-
 [[deps.ArgParse]]
 deps = ["Logging", "TextWrap"]
 git-tree-sha1 = "22cf435ac22956a7b45b0168abbc871176e7eecc"
@@ -164,8 +158,8 @@ uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 version = "1.6.0"
 
 [[deps.Emma]]
-deps = ["ArgMacros", "Artifacts", "BioSequences", "FASTX", "GenomicAnnotations", "Logging", "Luxor", "Serialization", "UUIDs", "Unicode", "XGBoost"]
-path = "/home/ianc/github/Emma-Web/lib/Emma"
+deps = ["ArgParse", "Artifacts", "BioSequences", "FASTX", "GenomicAnnotations", "Logging", "Luxor", "Serialization", "UUIDs", "Unicode", "XGBoost"]
+path = "../Emma-Web/lib/Emma"
 uuid = "128bd364-da3e-11ec-1e16-23cb183f8c85"
 version = "0.1.0"
 
