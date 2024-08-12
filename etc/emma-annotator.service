@@ -10,12 +10,17 @@ StartLimitIntervalSec={{30*5}}
 User={{user}}
 Group={{group}}
 {% endif -%}
-
+{%- set port = port|default(9998) -%}
 ExecStart={{julia_dir | normpath}}/bin/julia --startup-file=no \
     --project=. \
-    --threads={{threads|default(8)}} \
+    --threads={{threads|default(4)}} \
     srvr.jl \
     --workers={{workers|default(4)}}
+    --port={{port}}
+{# specifications say this should be a synchronous functions #}
+ExecStop=/usr/bin/curl --silent http://127.0.0.1:{{port}}/terminate
+KillSignal=SIGINT
+KillMode=control-group
 WorkingDirectory={{annotator_dir|default('.')|normpath}}
 SyslogIdentifier={{appname}}-annotate
 Type=simple
@@ -28,18 +33,18 @@ TimeoutStopSec={{stopwait|default(30)}}
 {#- the backend if annotator does logging -#}
 StandardOutput=append:{{application_dir}}/instance/logs/{{appname}}-annotate.log
 # redirect_stderr=true
-StandardError=inherit
+StandardError=append:{{application_dir}}/instance/logs/{{appname}}-error.log
+# StandardError=inherit
 # stdout_logfile_maxbytes=10MB
 # stdout_logfile_backups=3
 {% else -%}
 StandardOutput=syslog
 StandardError=syslog
 {% endif %}
-Environment="JULIA_NUM_THREADS={{threads|default(8)}}"
+Environment="JULIA_NUM_THREADS={{threads|default(4)}}"
 Environment="JULIA_DEPOT_PATH={{depot_path|default(homedir ~'/.julia')}}"
 Environment="USER={{user}}"
 Environment="HOME={{homedir}}"
-StopWhenUnneeded=yes
 NoNewPrivileges=true
 [Install]
 WantedBy={% if not asuser %}multi-user.target{% else %}default.target{% endif %}

@@ -1,6 +1,17 @@
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
 import JuliaWebAPI: APIInvoker, run_http, process, create_responder
 import Logging
+
+function git_version()
+    repo_dir = dirname(@__FILE__)
+    try
+        # older version of git don't have -C
+        strip(read(pipeline(`git -C "$repo_dir" rev-parse HEAD`, stderr=devnull), String))
+        # strip(read(pipeline(`sh -c 'cd "$repo_dir" && git rev-parse HEAD'`, stderr=devnull), String))
+    catch e
+        "unknown"
+    end
+end
 function get_args(args::Vector{String}=ARGS)
     distributed_args = ArgParseSettings(prog="EmmaServer", autofix_names=true)  # turn "-" into "_" for arg names.
 
@@ -50,8 +61,8 @@ const LOGLEVELS = Dict("info" => Logging.Info, "debug" => Logging.Debug, "warn" 
     "error" => Logging.Error)
 
 function logger(level)
-    #logger = Logging.SimpleLogger(stdout, level)
-    logger = Logging.ConsoleLogger(stderr, level, meta_formatter=Logging.default_metafmt)
+    logger = Logging.SimpleLogger(stdout, level)
+    # logger = Logging.ConsoleLogger(stderr, level, meta_formatter=Logging.default_metafmt)
     Logging.global_logger(logger)
 end
 
@@ -60,6 +71,7 @@ function main(args=ARGS)
     args = get_args(args)
     llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
     logger(llevel)
+    version = git_version()
     # Expose testfn1 and testfn2 via a ZMQ listener
     # endpoint = "tcp://127.0.0.1:9999"
     #endpoint = "inproc://test-1"
@@ -70,6 +82,12 @@ function main(args=ARGS)
         error("no such directory: \"$(tempdir)\"")
     end
     function ping()
+        return "OK $(version[1:7])"
+    end
+
+    function terminate()
+        @info "terminated..."
+        exit(0)
         return "OK"
     end
 
@@ -77,6 +95,7 @@ function main(args=ARGS)
 
     resp = create_responder([
             (ping, true),
+            (terminate, true),
             (task_emma, true, Dict{String,String}(), "emma") # respond with text
         ], endpoint, true, "")
     process(resp, async=true)
