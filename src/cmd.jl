@@ -29,6 +29,17 @@ function get_args(args::Vector{String}=ARGS)
         arg_type = String
         default = "/tmp"
         help = "temp directory"
+        "--watch"
+        arg_type = String
+        help = "watch directory"
+        "--old"
+        arg_type = Float32
+        default = 10.0
+        help = "files older than this in days will be removed"
+        "--sleep"
+        arg_type = Float32
+        default = 1.0
+        help = "sleep in hours"
     end
 
     parse_args(args, distributed_args; as_symbols=true)
@@ -78,6 +89,20 @@ function main(args=ARGS)
     apiclnt = [APIInvoker(endpoint) for i in 1:nchannels]
 
     init_workers(args[:workers])
-    #Start the HTTP server in current process (Ctrl+C to interrupt)
+
+    watch = args[:watch]
+    if watch !== nothing
+        wait = args[:sleep] * 60 * 60
+        if wait < 60
+            error("can't sleep less that 60 seconds")
+        end
+        @info "watching $watch $wait"
+        @async clean(watch, wait; old=args[:old], verbose=false)
+    end
+
+    # Start the HTTP server in current process (Ctrl+C to interrupt)
     run_http(apiclnt, args[:port])
+
 end
+
+

@@ -1,5 +1,4 @@
 # Load required packages
-using JuliaWebAPI
 import EmmaServer: main
 
 
