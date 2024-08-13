@@ -4,7 +4,8 @@ function arm(procs)
 
     @everywhere procs begin
         # If we have a raw 'import EmmaServer' here then
-        # precompilation (of the JuliaBackground package) tries to recurse and compile EmmaServer *again* (I think) and fails.
+        # precompilation (of the EmmaServer package) tries to recurse and 
+        # compile EmmaServer *again* (I think) and fails.
         # "hiding" the import inside a quote seems to work.
         eval(quote
             using EmmaServer

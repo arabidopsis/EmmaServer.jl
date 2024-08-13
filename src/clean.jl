@@ -3,7 +3,7 @@ function clean(directory::String, wait::Real; old=2.0, verbose=false)
     if !isdir(directory)
         error("not a directory: $directory")
     end
-    @info "checking $directory: wait=$(wait)secsq old=$(old)days"
+    @info "checking $directory: wait=$(wait)secs old=$(old)days"
     while true
         now = time()
         for (root, dirs, files) in walkdir(directory)
