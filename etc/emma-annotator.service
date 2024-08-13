@@ -1,4 +1,3 @@
-
 [Unit]
 Description=annotator for {{appname}}
 After={{after|default('network.target')}}
@@ -15,8 +14,8 @@ ExecStart={{julia_dir | normpath}}/bin/julia --startup-file=no \
     --project=. \
     --threads={{threads|default(4)}} \
     srvr.jl \
-    --workers={{workers|default(4)}}
-    --port={{port}}
+    --workers={{workers|default(4)}} \
+    --port={{port}} {% if watch is defined %}--watch={{watch|normpath}}{% endif %}
 {# specifications say this should be a synchronous functions #}
 ExecStop=/usr/bin/curl --silent http://127.0.0.1:{{port}}/terminate
 KillSignal=SIGINT

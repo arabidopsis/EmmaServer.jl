@@ -51,6 +51,9 @@ function get_args(args::Vector{String}=ARGS)
         arg_type = Float32
         default = 1.0
         help = "sleep in hours"
+        "--console"
+        action = :store_true
+        help = "use the console logger"
     end
 
     parse_args(args, distributed_args; as_symbols=true)
@@ -60,9 +63,12 @@ end
 const LOGLEVELS = Dict("info" => Logging.Info, "debug" => Logging.Debug, "warn" => Logging.Warn,
     "error" => Logging.Error)
 
-function logger(level)
-    logger = Logging.SimpleLogger(stdout, level)
-    # logger = Logging.ConsoleLogger(stderr, level, meta_formatter=Logging.default_metafmt)
+function logger(level; console=false)
+    if console
+        logger = Logging.ConsoleLogger(stderr, level, meta_formatter=Logging.default_metafmt)
+    else
+        logger = Logging.SimpleLogger(stdout, level)
+    end
     Logging.global_logger(logger)
 end
 
@@ -70,7 +76,7 @@ function main(args=ARGS)
     Sys.set_process_title("emma-distributed")
     args = get_args(args)
     llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
-    logger(llevel)
+    logger(llevel; console=args[:console])
     version = git_version()
     # Expose testfn1 and testfn2 via a ZMQ listener
     # endpoint = "tcp://127.0.0.1:9999"
@@ -91,11 +97,16 @@ function main(args=ARGS)
         return "OK"
     end
 
+    function config()
+        return args
+    end
+
     task_emma = make_task(tempdir)
 
     resp = create_responder([
             (ping, true),
             (terminate, true),
+            (config, true),
             (task_emma, true, Dict{String,String}(), "emma") # respond with text
         ], endpoint, true, "")
     process(resp, async=true)
