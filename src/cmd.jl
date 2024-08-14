@@ -54,6 +54,9 @@ function get_args(args::Vector{String}=ARGS)
         "--console"
         action = :store_true
         help = "use the console logger"
+        "--without-terminate", "-x"
+        action = :store_true
+        help = "don't have a terminate endpoint"
     end
 
     parse_args(args, distributed_args; as_symbols=true)
@@ -77,7 +80,7 @@ function main(args=ARGS)
     args = get_args(args)
     llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
     logger(llevel; console=args[:console])
-    version = git_version()
+
     # Expose testfn1 and testfn2 via a ZMQ listener
     # endpoint = "tcp://127.0.0.1:9999"
     #endpoint = "inproc://test-1"
@@ -87,6 +90,10 @@ function main(args=ARGS)
     if !isdir(tempdir)
         error("no such directory: \"$(tempdir)\"")
     end
+
+    version = git_version()
+
+
     function ping()
         return "OK $(version[1:7])"
     end
@@ -103,12 +110,15 @@ function main(args=ARGS)
 
     task_emma = make_task(tempdir)
 
-    resp = create_responder([
-            (ping, true),
-            (terminate, true),
-            (config, true),
-            (task_emma, true, Dict{String,String}(), "emma") # respond with text
-        ], endpoint, true, "")
+    tasks = [(ping, true),
+        (config, true),
+        (task_emma, true, Dict{String,String}(), "emma")]
+
+    wt = args[:without_terminate]
+    if !wt
+        push!(tasks, (terminate, true))
+    end
+    resp = create_responder(tasks, endpoint, true, "")
     process(resp, async=true)
 
     nchannels = args[:nchannels]
@@ -129,9 +139,18 @@ function main(args=ARGS)
         @info "watching $watch $wait"
         @async clean(watch, wait; old=args[:old], verbose=false)
     end
-
     # Start the HTTP server in current process (Ctrl+C to interrupt)
-    run_http(apiclnt, args[:port])
+
+    Base.exit_on_sigint(false)
+    try
+        run_http(apiclnt, args[:port])
+    catch e
+        if e isa InterruptException
+            @info "Abort!"
+            exit(0)
+        end
+        rethrow(e)
+    end
 
 end
 
