@@ -18,7 +18,7 @@ function make_task(directory::String=".")
             gffs, genome, offset = rotate(rotate_to, gffs, genome)
         end
         ret = Dict( "gffs" => gffs, "id" => id,
-            "length" => length(genome), "offset" => offset, "species" => species)
+            "length" => length(genome), "offset" => offset, "species" => species, rotate => rotate_to)
         if svg == "yes"
             # mRNAless = filter(x -> x.ftype != "mRNA" && x.ftype != "CDS", gffs)
             ret["svg"] = drawgenome(id, length(genome), gffs)
