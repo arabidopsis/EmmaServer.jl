@@ -17,7 +17,7 @@ function make_task(directory::String=".")
         if rotate_to != ""
             gffs, genome, offset = rotate(rotate_to, gffs, genome)
         end
-        ret = Dict("uuid" => tempfile.uuid, "gffs" => gffs, "id" => id,
+        ret = Dict( "gffs" => gffs, "id" => id,
             "length" => length(genome), "offset" => offset, "species" => species)
         if svg == "yes"
             # mRNAless = filter(x -> x.ftype != "mRNA" && x.ftype != "CDS", gffs)

@@ -1,3 +1,4 @@
+import Dates: unix2datetime
 
 function clean(directory::String, wait::Real; old=2.0, verbose=false)
     if !isdir(directory)
@@ -6,6 +7,7 @@ function clean(directory::String, wait::Real; old=2.0, verbose=false)
     @info "checking $directory: wait=$(wait)secs old=$(old)days"
     while true
         now = time()
+        nerr = 0
         try
             for (root, dirs, files) in walkdir(directory)
                 for file in files
@@ -18,12 +20,15 @@ function clean(directory::String, wait::Real; old=2.0, verbose=false)
                             @info "removed: $f"
                         end
                     end
-
                 end
             end
         catch e
             @error "walkdir: $(e)"
+            nerr += 1
         end
+        open(joinpath(directory, ".clean"), "w") do out
+            write(out, "$(unix2datetime(now)): $(nerr)\n")
+        end 
         sleep(wait)
     end
 end
