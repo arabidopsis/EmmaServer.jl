@@ -43,11 +43,11 @@ function get_args(args::Vector{String}=ARGS)
         "--watch"
         arg_type = String
         help = "watch directory"
-        "--old"
+        "--max-days"
         arg_type = Float32
-        default = 10.0
+        default = 30.0
         help = "files older than this in days will be removed"
-        "--sleep"
+        "--sleep-hours"
         arg_type = Float32
         default = 1.0
         help = "sleep in hours"
@@ -132,12 +132,12 @@ function main(args=ARGS)
 
     watch = args[:watch]
     if watch !== nothing
-        wait = args[:sleep] * 60 * 60
+        wait = args[:sleep_hours] * 60 * 60
         if wait < 60
             error("can't sleep less that 60 seconds")
         end
         @info "watching $watch $wait"
-        @async clean(watch, wait; old=args[:old], verbose=false)
+        @async clean(watch, wait; old=args[:max_days], verbose=false)
     end
     # Start the HTTP server in current process (Ctrl+C to interrupt)
 
