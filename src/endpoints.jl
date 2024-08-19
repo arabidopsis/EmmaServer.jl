@@ -8,14 +8,15 @@ function emmatwo(tempfile::TempFile, infile::String, translation_table::Integer)
     return (id, gffs, genome, reset_log())
 end
 
-function make_task(directory::String=".")
+function make_task(tempdirectory::String=".")
     function task_emma(; fasta::String="", svg::String="no", rotate_to::String="", gb="no",
         species::String="vertebrate")
+        fasta = expanduser(fasta)
         if !isfile(fasta)
             error("no such file: $(fasta)")
         end
         translation_table = species == "vertebrate" ? 2 : 5
-        tempfile = TempFile(directory)
+        tempfile = TempFile(tempdirectory)
         id, gffs, genome, logs = fetch(@spawnat :any emmatwo(tempfile, fasta, translation_table))
         offset = 0
         if rotate_to != ""
