@@ -10,7 +10,7 @@ function arm(procs)
         eval(quote
             using EmmaServer
         end)
-
+        EmmaServer.set_global_logger("Warn")
     end
 
 end
