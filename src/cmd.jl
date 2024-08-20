@@ -57,6 +57,9 @@ function get_args(args::Vector{String}=ARGS)
         "--without-terminate", "-x"
         action = :store_true
         help = "don't have a terminate endpoint"
+        "--use-threads"
+        action = :store_true
+        help = "use threads instead of processes"
     end
 
     parse_args(args, distributed_args; as_symbols=true)
@@ -108,7 +111,7 @@ function main(args=ARGS)
         return args
     end
 
-    task_emma = make_task(tempdir)
+    task_emma = make_task2(tempdir, args[:use_threads])
 
     tasks = [(ping, true),
         (config, true),
@@ -126,10 +129,16 @@ function main(args=ARGS)
         nchannels = args[:workers]
     end
     #Create the ZMQ client that talks to the ZMQ listener above
+    
+    if ~args[:use_threads]
+        @info "using $(args[:workers]) workers"
+        init_workers(args[:workers])
+    else
+        @info "using $(Threads.nthreads()) threads"
+        nchannels = Threads.nthreads()
+    end
+    
     apiclnt = [APIInvoker(endpoint) for i in 1:nchannels]
-
-    init_workers(args[:workers])
-
     watch = args[:watch]
     if watch !== nothing
         wait = args[:sleep_hours] * 60 * 60
