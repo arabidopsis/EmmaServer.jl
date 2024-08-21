@@ -2,9 +2,25 @@
 
 import Distributed: @spawnat
 import Emma: emmaone, writeGFF, TempFile, drawgenome, rotate, writeGB
+import CodecZlib: GzipDecompressorStream
+using FASTX
+
+function maybe_gzread(f::Function, filename::String)
+    if endswith(filename, ".gz")
+        open(z -> z |> GzipDecompressorStream |> f, filename)
+    else
+        open(f, filename)
+    end
+end
 
 function emmatwo(tempfile::TempFile, infile::String, translation_table::Integer)
-    id, gffs, genome = emmaone(tempfile, infile, translation_table)
+    target = FASTA.Record()
+    maybe_gzread(infile) do io
+        FASTA.Reader(io) do reader
+            read!(reader, target)
+        end
+    end
+    id, gffs, genome = emmaone(tempfile, target, translation_table)
     return (id, gffs, genome, reset_log())
 end
 
@@ -79,7 +95,7 @@ end
 function make_task2(tempdirectory::String=".", use_threads::Bool=false)
     function task_emma2(; fasta::String="", svg::String="no", rotate_to::String="", gb::String="no", species::String="vertebrate")
         emmathree(tempdirectory; fasta=fasta, svg=svg, rotate_to=rotate_to,
-        gb=gb, species=species, use_threads=use_threads)
+            gb=gb, species=species, use_threads=use_threads)
     end
     return task_emma2
 

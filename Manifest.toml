@@ -2,7 +2,7 @@
 
 julia_version = "1.10.4"
 manifest_format = "2.0"
-project_hash = "4c4b2b4dbdcb368de2142e709b7b77dd68e46f3e"
+project_hash = "a4517c4c5d0d2d426e65b6cab28a2b50c369df22"
 
 [[deps.ArgMacros]]
 deps = ["TextWrap"]
@@ -76,9 +76,9 @@ version = "1.18.0+2"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
-git-tree-sha1 = "b8fe8546d52ca154ac556809e10c75e6e7430ac8"
+git-tree-sha1 = "bce6804e5e6044c6daab27bb533d1295e4a2e759"
 uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
-version = "0.7.5"
+version = "0.7.6"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -151,7 +151,7 @@ version = "1.6.0"
 deps = ["ArgMacros", "ArtifactUtils", "Artifacts", "BioSequences", "FASTX", "GenomicAnnotations", "Logging", "Luxor", "Serialization", "UUIDs", "Unicode"]
 path = "../Emma"
 uuid = "128bd364-da3e-11ec-1e16-23cb183f8c85"
-version = "1.0.1"
+version = "1.0.2"
 
 [[deps.Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
