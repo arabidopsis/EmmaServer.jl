@@ -5,12 +5,12 @@ import Emma: emmaone, writeGFF, TempFile, drawgenome, rotate, writeGB
 import CodecZlib: GzipDecompressorStream
 using FASTX
 
-struct CmdArgs
-    fasta::String
+@kwdef struct CmdArgs
+    fasta::String = ""
     svg::String = "no"
     rotate_to::String = ""
     gb::String = "no"
-    sspecies::String = "vertebrate"
+    species::String = "vertebrate"
 end
 
 function maybe_gzread(f::Function, filename::String)
@@ -111,7 +111,7 @@ function make_task2(tempdirectory::String=".", use_threads::Bool=false)
         gb::String="no",
         species::String="vertebrate"
     )
-        args = CmdArgs(fasta, svg, rotate_to, gb, species)
+        args = CmdArgs(; fasta=fasta, svg=svg, rotate_to=rotate_to, gb=gb, species=species)
         emmathree(tempdirectory, args; use_threads=use_threads)
     end
     return task_emma2
@@ -125,7 +125,7 @@ function make_task4(tempdirectory::String=".", use_threads::Bool=false)
         gb::String="no",
         species::String="vertebrate"
     )
-        args = CmdArgs(fasta, svg, rotate_to, gb, species)
+        args = CmdArgs(; fasta=fasta, svg=svg, rotate_to=rotate_to, gb=gb, species=species)
         if use_threads
             fetch(Threads.@spawn emmafour(tempdirectory, args))
 

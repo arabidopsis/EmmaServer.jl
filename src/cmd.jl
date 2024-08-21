@@ -16,7 +16,7 @@ function git_version(repo_dir::String)
 end
 function get_args(args::Vector{String}=ARGS)
     distributed_args = ArgParseSettings(; prog="EmmaServer", autofix_names=true)  # turn "-" into "_" for arg names.
-
+    #! format: off
     @add_arg_table! distributed_args begin
         "--level", "-l"
         arg_type = String
@@ -42,34 +42,24 @@ function get_args(args::Vector{String}=ARGS)
         arg_type = String
         default = "/tmp"
         help = "temp directory"
-        """
-        --watch
-        """
+        "--watch"
         arg_type = String
         help = "watch directory"
-        """
-        --max-days
-        """
+        "--max-days"
         arg_type = Float32
         default = 30.0
         help = "files older than this in days will be removed"
-        """
-        --sleep-hours
-        """
+        "--sleep-hours"
         arg_type = Float32
         default = 1.0
         help = "sleep in hours"
-        """
-        --console
-        """
+        "--console"
         action = :store_true
         help = "use the console logger"
         "--without-terminate", "-x"
         action = :store_true
         help = "don't have a terminate endpoint"
-        """
-        --use-threads
-        """
+        "--use-threads"
         action = :store_true
         help = "use threads instead of processes"
     end
