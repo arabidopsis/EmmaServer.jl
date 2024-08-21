@@ -5,6 +5,7 @@ function clean(directory::String, wait::Real; old=2.0, verbose=false)
         error("not a directory: $directory")
     end
     @info "checking $directory: wait=$(wait)secs old=$(old)days"
+
     while true
         now = time()
         nerr = 0
@@ -15,7 +16,7 @@ function clean(directory::String, wait::Real; old=2.0, verbose=false)
                     t = mtime(f)
                     days = (now - t) / (60 * 60 * 24)
                     if days > old
-                        rm(f, force=true)
+                        rm(f; force=true)
                         if verbose
                             @info "removed: $f"
                         end
@@ -28,9 +29,7 @@ function clean(directory::String, wait::Real; old=2.0, verbose=false)
         end
         open(joinpath(directory, ".clean"), "w") do out
             write(out, "$(unix2datetime(now)): $(nerr)\n")
-        end 
+        end
         sleep(wait)
     end
 end
-
-

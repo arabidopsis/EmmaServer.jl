@@ -1,7 +1,6 @@
 import Distributed
 import Distributed: addprocs, @everywhere
 function arm(procs)
-
     @everywhere procs begin
         # If we have a raw 'import EmmaServer' here then
         # precompilation (of the EmmaServer package) tries to recurse and 
@@ -12,7 +11,6 @@ function arm(procs)
         end)
         EmmaServer.set_global_logger("warn")
     end
-
 end
 # function busywait(seconds)
 #     tstart = time_ns()
@@ -26,5 +24,3 @@ function init_workers(nworkers::Int)
     @info "background=$(procs)"
     arm(procs)
 end
-
-

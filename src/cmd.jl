@@ -6,14 +6,14 @@ function git_version()
     repo_dir = dirname(@__FILE__)
     try
         # older version of git don't have -C
-        strip(read(pipeline(`git -C "$repo_dir" rev-parse HEAD`, stderr=devnull), String))
+        strip(read(pipeline(`git -C "$repo_dir" rev-parse HEAD`, stderr = devnull), String))
         # strip(read(pipeline(`sh -c 'cd "$repo_dir" && git rev-parse HEAD'`, stderr=devnull), String))
     catch e
         "unknown"
     end
 end
-function get_args(args::Vector{String}=ARGS)
-    distributed_args = ArgParseSettings(prog="EmmaServer", autofix_names=true)  # turn "-" into "_" for arg names.
+function get_args(args::Vector{String} = ARGS)
+    distributed_args = ArgParseSettings(prog = "EmmaServer", autofix_names = true)  # turn "-" into "_" for arg names.
 
     @add_arg_table! distributed_args begin
         "--level", "-l"
@@ -40,49 +40,58 @@ function get_args(args::Vector{String}=ARGS)
         arg_type = String
         default = "/tmp"
         help = "temp directory"
-        "--watch"
+        """
+        --watch
+        """
         arg_type = String
         help = "watch directory"
-        "--max-days"
+        """
+        --max-days
+        """
         arg_type = Float32
         default = 30.0
         help = "files older than this in days will be removed"
-        "--sleep-hours"
+        """
+        --sleep-hours
+        """
         arg_type = Float32
         default = 1.0
         help = "sleep in hours"
-        "--console"
+        """
+        --console
+        """
         action = :store_true
         help = "use the console logger"
         "--without-terminate", "-x"
         action = :store_true
         help = "don't have a terminate endpoint"
-        "--use-threads"
+        """
+        --use-threads
+        """
         action = :store_true
         help = "use threads instead of processes"
     end
 
-    parse_args(args, distributed_args; as_symbols=true)
-
+    parse_args(args, distributed_args; as_symbols = true)
 end
 
 const LOGLEVELS = Dict("info" => Logging.Info, "debug" => Logging.Debug, "warn" => Logging.Warn,
     "error" => Logging.Error)
 
-function logger(level; console=false)
+function logger(level; console = false)
     if console
-        logger = Logging.ConsoleLogger(stderr, level, meta_formatter=Logging.default_metafmt)
+        logger = Logging.ConsoleLogger(stderr, level, meta_formatter = Logging.default_metafmt)
     else
         logger = Logging.SimpleLogger(stdout, level)
     end
     Logging.global_logger(logger)
 end
 
-function main(args=ARGS)
+function main(args = ARGS)
     Sys.set_process_title("emma-distributed")
     args = get_args(args)
     llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
-    logger(llevel; console=args[:console])
+    logger(llevel; console = args[:console])
 
     # Expose testfn1 and testfn2 via a ZMQ listener
     # endpoint = "tcp://127.0.0.1:9999"
@@ -95,7 +104,6 @@ function main(args=ARGS)
     end
 
     version = git_version()
-
 
     function ping()
         return "OK $(version[1:7])"
@@ -111,7 +119,7 @@ function main(args=ARGS)
         return args
     end
 
-    task_emma = make_task2(tempdir, args[:use_threads])
+    task_emma = make_task4(tempdir, args[:use_threads])
 
     tasks = [(ping, true),
         (config, true),
@@ -122,22 +130,25 @@ function main(args=ARGS)
         push!(tasks, (terminate, true))
     end
     resp = create_responder(tasks, endpoint, true, "")
-    process(resp, async=true)
+    process(resp, async = true)
 
     nchannels = args[:nchannels]
-    if nchannels <= 0
-        nchannels = args[:workers]
-    end
+
     #Create the ZMQ client that talks to the ZMQ listener above
-    
+
     if ~args[:use_threads]
         @info "using $(args[:workers]) workers"
         init_workers(args[:workers])
+        if nchannels <= 0
+            nchannels = args[:workers]
+        end
     else
         @info "using $(Threads.nthreads()) threads"
-        nchannels = Threads.nthreads()
+        if nchannels <= 0
+            nchannels = Threads.nthreads()
+        end
     end
-    
+
     apiclnt = [APIInvoker(endpoint) for i in 1:nchannels]
     watch = args[:watch]
     if watch !== nothing
@@ -146,7 +157,7 @@ function main(args=ARGS)
             error("can't sleep less that 60 seconds")
         end
         @info "watching $watch $wait"
-        @async clean(watch, wait; old=args[:max_days], verbose=false)
+        @async clean(watch, wait; old = args[:max_days], verbose = false)
     end
     # Start the HTTP server in current process (Ctrl+C to interrupt)
 
@@ -160,7 +171,4 @@ function main(args=ARGS)
         end
         rethrow(e)
     end
-
 end
-
-
