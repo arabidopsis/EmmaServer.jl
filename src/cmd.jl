@@ -3,17 +3,19 @@ import JuliaWebAPI: APIInvoker, run_http, process, create_responder
 import Logging
 
 function git_version()
-    repo_dir = dirname(@__FILE__)
+    git_version(dirname(@__FILE__))
+end
+function git_version(repo_dir::String)
     try
         # older version of git don't have -C
-        strip(read(pipeline(`git -C "$repo_dir" rev-parse HEAD`, stderr = devnull), String))
+        strip(read(pipeline(`git -C "$repo_dir" rev-parse HEAD`; stderr=devnull), String))
         # strip(read(pipeline(`sh -c 'cd "$repo_dir" && git rev-parse HEAD'`, stderr=devnull), String))
     catch e
         "unknown"
     end
 end
-function get_args(args::Vector{String} = ARGS)
-    distributed_args = ArgParseSettings(prog = "EmmaServer", autofix_names = true)  # turn "-" into "_" for arg names.
+function get_args(args::Vector{String}=ARGS)
+    distributed_args = ArgParseSettings(; prog="EmmaServer", autofix_names=true)  # turn "-" into "_" for arg names.
 
     @add_arg_table! distributed_args begin
         "--level", "-l"
@@ -72,26 +74,26 @@ function get_args(args::Vector{String} = ARGS)
         help = "use threads instead of processes"
     end
 
-    parse_args(args, distributed_args; as_symbols = true)
+    parse_args(args, distributed_args; as_symbols=true)
 end
 
 const LOGLEVELS = Dict("info" => Logging.Info, "debug" => Logging.Debug, "warn" => Logging.Warn,
     "error" => Logging.Error)
 
-function logger(level; console = false)
+function logger(level; console=false)
     if console
-        logger = Logging.ConsoleLogger(stderr, level, meta_formatter = Logging.default_metafmt)
+        logger = Logging.ConsoleLogger(stderr, level; meta_formatter=Logging.default_metafmt)
     else
         logger = Logging.SimpleLogger(stdout, level)
     end
     Logging.global_logger(logger)
 end
 
-function main(args = ARGS)
+function main(args=ARGS)
     Sys.set_process_title("emma-distributed")
     args = get_args(args)
     llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
-    logger(llevel; console = args[:console])
+    logger(llevel; console=args[:console])
 
     # Expose testfn1 and testfn2 via a ZMQ listener
     # endpoint = "tcp://127.0.0.1:9999"
@@ -130,7 +132,7 @@ function main(args = ARGS)
         push!(tasks, (terminate, true))
     end
     resp = create_responder(tasks, endpoint, true, "")
-    process(resp, async = true)
+    process(resp; async=true)
 
     nchannels = args[:nchannels]
 
@@ -157,7 +159,7 @@ function main(args = ARGS)
             error("can't sleep less that 60 seconds")
         end
         @info "watching $watch $wait"
-        @async clean(watch, wait; old = args[:max_days], verbose = false)
+        @async clean(watch, wait; old=args[:max_days], verbose=false)
     end
     # Start the HTTP server in current process (Ctrl+C to interrupt)
 

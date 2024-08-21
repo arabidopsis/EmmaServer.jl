@@ -13,13 +13,23 @@ end
 struct BGLogger <: Logging.AbstractLogger
     min_level::Logging.LogLevel
 
-    function BGLogger(min_level::Logging.LogLevel = Logging.Warn)
+    function BGLogger(min_level::Logging.LogLevel=Logging.Warn)
         new(min_level)
     end
 end
 
-function Logging.handle_message(logger::BGLogger, level, message, _module, group, id,
-    filepath, line; maxlog = nothing, kwargs...)
+function Logging.handle_message(
+    logger::BGLogger,
+    level,
+    message,
+    _module,
+    group,
+    id,
+    filepath,
+    line;
+    maxlog=nothing,
+    kwargs...
+)
     if maxlog !== nothing && maxlog isa Integer
         remaining = get!(logger.message_limits, id, maxlog)
         logger.message_limits[id] = remaining - 1
@@ -55,7 +65,7 @@ function Logging.catch_exceptions(logger::BGLogger)
     false
 end
 
-function set_global_logger(level::String = "warn")
+function set_global_logger(level::String="warn")
     llevel = get(LOGLEVELS, level, Logging.Warn)
 
     logger = BGLogger(llevel)
