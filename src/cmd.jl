@@ -112,10 +112,11 @@ function main(args=ARGS)
     end
 
     task_emma = make_task4(tempdir, args[:use_threads])
-
-    tasks = [(ping, true),
-        (config, true),
-        (task_emma, true, Dict{String,String}(), "emma")]
+    headers = Dict("Content-Type" => "application/json")
+    # function, json_response, headers, name
+    tasks = [(ping, true, headers),
+        (config, true, headers),
+        (task_emma, true,headers, "emma")]
 
     wt = args[:without_terminate]
     if !wt
