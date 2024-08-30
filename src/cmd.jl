@@ -120,7 +120,7 @@ function main(args=ARGS)
 
     wt = args[:without_terminate]
     if !wt
-        push!(tasks, (terminate, true))
+        push!(tasks, (terminate, true , headers, "terminate"))
     end
     resp = create_responder(tasks, endpoint, true, "")
     process(resp; async=true)
