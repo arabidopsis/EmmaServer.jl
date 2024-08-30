@@ -2,7 +2,7 @@
 
 julia_version = "1.10.4"
 manifest_format = "2.0"
-project_hash = "a4517c4c5d0d2d426e65b6cab28a2b50c369df22"
+project_hash = "3fd2dc6997ba607dcec34462b781b838dad3077e"
 
 [[deps.ArgMacros]]
 deps = ["TextWrap"]
