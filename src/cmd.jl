@@ -29,11 +29,10 @@ function get_args(args::Vector{String}=ARGS)
         "--nchannels", "-c"
         arg_type = Int
         default = -1
-        help = "number of API channels for http server [default = workers]"
+        help = "number of API channels for http server [default == workers or nthreads]"
         "--endpoint", "-e"
         arg_type = String
-        default = "ipc:///tmp/emma-distributed"
-        help = "endpoint for zmq connection"
+        help = "endpoint for zmq connection [default = ipc:///tmp/emma-distributed{port}]"
         "--port", "-p"
         arg_type = Int
         default = 9998
@@ -51,8 +50,8 @@ function get_args(args::Vector{String}=ARGS)
         help = "files older than this in days will be removed"
         "--sleep-hours"
         arg_type = Float32
-        default = 1.0
-        help = "sleep in hours"
+        default = 2.0
+        help = "sleep in hours between directory sweep"
         "--console"
         action = :store_true
         help = "use the console logger"
@@ -85,10 +84,12 @@ function main(args=ARGS)
     llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
     logger(llevel; console=args[:console])
 
-    # Expose testfn1 and testfn2 via a ZMQ listener
     # endpoint = "tcp://127.0.0.1:9999"
     #endpoint = "inproc://test-1"
     endpoint = args[:endpoint]
+    if endpoint === nothing
+        endpoint = "ipc:///tmp/emma-distributed$(args[:port])"
+    end
     @info "endpoint=$(endpoint) port=$(args[:port])"
     tempdir = args[:tempdir]
     if !isdir(tempdir)
@@ -122,7 +123,7 @@ function main(args=ARGS)
     if !wt
         push!(tasks, (terminate, true , headers, "terminate"))
     end
-    resp = create_responder(tasks, endpoint, true, "")
+    resp = create_responder(tasks, endpoint, true, nothing)
     process(resp; async=true)
 
     nchannels = args[:nchannels]
@@ -142,19 +143,19 @@ function main(args=ARGS)
         end
     end
 
-    apiclnt = [APIInvoker(endpoint) for i in 1:nchannels]
     watch = args[:watch]
     if watch !== nothing
         wait = args[:sleep_hours] * 60 * 60
-        if wait < 60
-            error("can't sleep less that 60 seconds")
+        if wait < 600
+            error("can't sleep less that 600 seconds: $(wait)")
         end
-        @info "watching $watch $wait"
+        @info "watching $watch every=$(wait)secs"
         @async clean(watch, wait; old=args[:max_days], verbose=false)
     end
     # Start the HTTP server in current process (Ctrl+C to interrupt)
-
-    Base.exit_on_sigint(false)
+    
+    apiclnt = [APIInvoker(endpoint) for i in 1:nchannels]
+    # Base.exit_on_sigint(false)
     try
         run_http(apiclnt, args[:port])
     catch e
