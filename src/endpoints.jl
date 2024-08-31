@@ -12,7 +12,7 @@ import Base64: base64decode
     rotate_to::String = ""
     gb::String = "no"
     species::String = "vertebrate"
-    is_file::Bool = true # fasta is a filename else the b64 enconded body of the fasta file
+    is_file::Bool = true # fasta is a filename else the b64 encoded body of the fasta file
 end
 
 function maybe_gzread(f::Function, filename::String)
@@ -128,7 +128,8 @@ function make_task2(tempdirectory::String=".", use_threads::Bool=false)
         species::String="vertebrate",
         is_file::String="true"
     )
-        args = CmdArgs(; fasta=fasta, svg=svg, rotate_to=rotate_to, gb=gb, species=species, is_file=startswith(is_file, r"1|t|T"))
+        args = CmdArgs(; fasta=fasta, svg=svg, rotate_to=rotate_to, gb=gb, species=species,
+            is_file=startswith(is_file, r"1|t|T"))
         emmathree(tempdirectory, args; use_threads=use_threads)
     end
     return task_emma2
