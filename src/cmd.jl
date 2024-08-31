@@ -78,6 +78,8 @@ function logger(level; console=false)
     Logging.global_logger(logger)
 end
 
+const JSON_RESP_HDRS = Dict{String,String}("Content-Type" => "application/json; charset=utf-8")
+
 function main(args=ARGS)
     Sys.set_process_title("emma-distributed")
     args = get_args(args)
@@ -113,17 +115,21 @@ function main(args=ARGS)
     end
 
     task_emma = make_task4(tempdir, args[:use_threads])
-    headers = Dict("Content-Type" => "application/json")
+
     # function, json_response, headers, name
-    tasks = [(ping, true, headers),
-        (config, true, headers),
-        (task_emma, true,headers, "emma")]
+    tasks = [
+        (ping, true, JSON_RESP_HDRS, "ping"),
+        (config, true, JSON_RESP_HDRS , "config"),
+        (task_emma, true, JSON_RESP_HDRS, "emma")
+    ]
 
     wt = args[:without_terminate]
     if !wt
-        push!(tasks, (terminate, true , headers, "terminate"))
+        push!(tasks, (terminate, true, JSON_RESP_HDRS, "terminate"))
     end
+    # bind=true nid=nothing
     resp = create_responder(tasks, endpoint, true, nothing)
+ 
     process(resp; async=true)
 
     nchannels = args[:nchannels]
@@ -155,7 +161,7 @@ function main(args=ARGS)
     # Start the HTTP server in current process (Ctrl+C to interrupt)
     
     apiclnt = [APIInvoker(endpoint) for i in 1:nchannels]
-    # Base.exit_on_sigint(false)
+
     try
         run_http(apiclnt, args[:port])
     catch e

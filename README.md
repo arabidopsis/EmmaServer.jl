@@ -1,7 +1,12 @@
 # Emma Server
 
 Web server that annotates Mitochondria via [Emma](https://github.com/ian-small/Emma)
-e.g.
+e.g. start the server with:
+
+```bash
+julia --project=. --threads=8 srvr.jl --use-threads --port=9998
+```
+Then run
 
 ```bash
 fasta="/path/to/fasta.fa"
