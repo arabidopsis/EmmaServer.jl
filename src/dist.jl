@@ -12,11 +12,7 @@ function arm(procs)
         EmmaServer.set_global_logger("warn")
     end
 end
-# function busywait(seconds)
-#     tstart = time_ns()
-#     while (time_ns() - tstart) / 1e9 < seconds
-#     end
-# end
+
 
 function init_workers(nworkers::Int)
     addprocs(nworkers; topology=:master_worker, exeflags="--project=$(Base.active_project())")

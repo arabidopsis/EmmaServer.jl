@@ -12,7 +12,7 @@ import Base64: base64decode
     rotate_to::String = ""
     gb::String = "no"
     species::String = "vertebrate"
-    is_file::Bool = true
+    is_file::Bool = true # fasta is a filename else the b64 enconded body of the fasta file
 end
 
 function maybe_gzread(f::Function, filename::String)
@@ -42,16 +42,20 @@ function emmatwo(tempfile::TempFile, infile::String, translation_table::Integer;
 end
 
 function emmathree(tempdirectory::String, args::CmdArgs; use_threads::Bool=false)
-    fasta = expanduser(args.fasta)
-    if !isfile(fasta)
-        error("no such file: $(fasta)")
+    fasta = args.fasta
+    if args.is_file
+        fasta = expanduser(fasta)
+        if !isfile(fasta)
+            error("no such file: $(fasta)")
+        end
     end
+
     translation_table = args.species == "vertebrate" ? 2 : 5
     tempfile = TempFile(tempdirectory)
     if use_threads
-        id, gffs, genome, logs = fetch(Threads.@spawn emmatwo(tempfile, fasta, translation_table))
+        id, gffs, genome, logs = fetch(Threads.@spawn emmatwo(tempfile, fasta, translation_table; is_file=args.is_file))
     else
-        id, gffs, genome, logs = fetch(@spawnat :any emmatwo(tempfile, fasta, translation_table))
+        id, gffs, genome, logs = fetch(@spawnat :any emmatwo(tempfile, fasta, translation_table; is_file=args.is_file))
     end
     offset = 0
     if args.rotate_to != ""
@@ -121,9 +125,10 @@ function make_task2(tempdirectory::String=".", use_threads::Bool=false)
         svg::String="no",
         rotate_to::String="",
         gb::String="no",
-        species::String="vertebrate"
+        species::String="vertebrate",
+        is_file::String="true"
     )
-        args = CmdArgs(; fasta=fasta, svg=svg, rotate_to=rotate_to, gb=gb, species=species)
+        args = CmdArgs(; fasta=fasta, svg=svg, rotate_to=rotate_to, gb=gb, species=species, is_file=startswith(is_file, r"1|t|T"))
         emmathree(tempdirectory, args; use_threads=use_threads)
     end
     return task_emma2
