@@ -39,8 +39,7 @@ function get_args(args::Vector{String}=ARGS)
         help = "http connection port"
         "--tempdir", "-t"
         arg_type = String
-        default = "/tmp"
-        help = "temp directory"
+        help = "temporary file directory [default is system tempdir()]" 
         "--watch"
         arg_type = String
         help = "watch directory"
@@ -86,17 +85,20 @@ function main(args=ARGS)
     llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
     logger(llevel; console=args[:console])
 
+    tmpdir = args[:tempdir]
+    if tmpdir === nothing
+        tmpdir = tempdir()
+    end
+    if !isdir(tmpdir)
+        error("no such directory: \"$(tmpdir)\"")
+    end
     # endpoint = "tcp://127.0.0.1:9999"
     #endpoint = "inproc://test-1"
     endpoint = args[:endpoint]
     if endpoint === nothing
-        endpoint = "ipc:///tmp/emma-distributed$(args[:port])"
+        endpoint = "ipc://$(tmpdir)/emma-distributed$(args[:port])"
     end
     @info "endpoint=$(endpoint) port=$(args[:port])"
-    tempdir = args[:tempdir]
-    if !isdir(tempdir)
-        error("no such directory: \"$(tempdir)\"")
-    end
 
     version = git_version()
 
@@ -114,7 +116,7 @@ function main(args=ARGS)
         return args
     end
 
-    task_emma = make_task4(tempdir, args[:use_threads])
+    task_emma = make_task4(tmpdir, args[:use_threads])
 
     # function, json_response, headers, name
     tasks = [
@@ -129,7 +131,7 @@ function main(args=ARGS)
     end
     # bind=true nid=nothing
     resp = create_responder(tasks, endpoint, true, nothing)
- 
+
     process(resp; async=true)
 
     nchannels = args[:nchannels]
