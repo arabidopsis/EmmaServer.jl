@@ -153,6 +153,7 @@ function main(args=ARGS)
 
     watch = args[:watch]
     if watch !== nothing
+        watch = expanduser(watch)
         wait = args[:sleep_hours] * 60 * 60
         if wait < 600
             error("can't sleep less that 600 seconds: $(wait)")
