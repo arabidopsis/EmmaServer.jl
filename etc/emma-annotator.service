@@ -12,10 +12,10 @@ Group={{group}}
 {%- set port = port|default(9998) -%}
 ExecStart={{julia_dir | normpath}}/bin/julia --startup-file=no \
     --project=. \
-    --threads={{threads|default(4)}} \
+    --threads={{threads|default(8)}} \
     srvr.jl \
-    --workers={{workers|default(4)}} \
-    --port={{port}} {% if watch is defined %}--watch={{watch|normpath}}{% endif %}
+    --use-threads \
+    --port={{port}} {% if watch is defined %}--max-days={{max_days|default(30)}} --watch={{watch|normpath}}{% endif %}
 {# specifications say this should be a synchronous functions #}
 ExecStop=/usr/bin/curl --silent http://127.0.0.1:{{port}}/terminate
 KillSignal=SIGINT
@@ -40,7 +40,7 @@ StandardError=append:{{application_dir}}/instance/logs/{{appname}}-error.log
 StandardOutput=syslog
 StandardError=syslog
 {% endif %}
-Environment="JULIA_NUM_THREADS={{threads|default(4)}}"
+Environment="JULIA_NUM_THREADS={{threads|default(8)}}"
 Environment="JULIA_DEPOT_PATH={{depot_path|default(homedir ~'/.julia')}}"
 Environment="USER={{user}}"
 Environment="HOME={{homedir}}"
