@@ -67,7 +67,7 @@ function emmathree(tempdirectory::String, args::CmdArgs; use_threads::Bool=false
         "length" => length(genome),
         "offset" => offset,
         "species" => args.species,
-        "rotate" => args.rotate_to
+        "rotate_to" => args.rotate_to
     )
     if args.svg == "yes"
         # mRNAless = filter(x -> x.ftype != "mRNA" && x.ftype != "CDS", gffs)
@@ -104,7 +104,7 @@ function emmafour(tempdirectory::String, args::CmdArgs)
         "length" => length(genome),
         "offset" => offset,
         "species" => args.species,
-        "rotate" => args.rotate_to
+        "rotate_to" => args.rotate_to
     )
     if args.svg == "yes"
         # mRNAless = filter(x -> x.ftype != "mRNA" && x.ftype != "CDS", gffs)
