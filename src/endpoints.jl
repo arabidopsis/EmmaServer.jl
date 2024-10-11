@@ -1,10 +1,12 @@
 # Define functions testfn1 and testfn2 that we shall expose
 
 import Distributed: @spawnat
-import Emma: emmaone, writeGFF, TempFile, drawgenome, rotate, writeGB, cleanfiles
-import CodecZlib: GzipDecompressorStream
+import Emma: emmaone, TempFile, drawgenome, rotate, writeGB, cleanfiles
+import CodecZlib: GzipDecompressorStream, GzipCompressorStream
 using FASTX
 import Base64: base64decode
+import JSON3
+import Random
 
 @kwdef struct CmdArgs
     fasta::String = ""
@@ -20,6 +22,23 @@ function maybe_gzread(f::Function, filename::String)
         open(z -> z |> GzipDecompressorStream |> f, filename)
     else
         open(f, filename)
+    end
+end
+
+function maybe_gzwrite(f::Function, filename::String)
+    function gzcompress(func::Function, fp::IO)
+        o = GzipCompressorStream(fp)
+        try
+            func(o)
+        finally
+            close(o)
+        end
+    end
+
+    if endswith(filename, ".gz")
+        open(fp -> gzcompress(f, fp), filename, "w")
+    else
+        open(f, filename, "w")
     end
 end
 
@@ -124,6 +143,27 @@ function emmafour(tempdirectory::String, args::CmdArgs)
     return ret
 end
 
+function atomic_write(path::String, data)
+    parent = dirname(path)
+    _, ext = splitext(path)
+    tmp = joinpath(parent, "$(Random.rand(UInt32))$(ext)")
+    try
+        maybe_gzwrite(tmp) do io
+            JSON3.write(io, data)
+        end
+        mv(tmp, path)
+    catch
+        rm(tmp; force=true)
+        rethrow()
+    end
+end
+function emmafive(tempdirectory::String, args::CmdArgs, data_path::String)
+    dict = emmafour(tempdirectory, args)
+    atomic_write(data_path, dict)
+
+    return true
+end
+
 function make_task2(tempdirectory::String=".", use_threads::Bool=false)
     function task_emma2(;
         fasta::String="",
@@ -171,4 +211,32 @@ function make_task4(tempdirectory::String=".", use_threads::Bool=false)
         end
     end
     return task_emma4
+end
+
+function make_task5(tempdirectory::String=".", use_threads::Bool=false)
+    function task_emma5(;
+        fasta::String="",
+        svg::String="no",
+        rotate_to::String="",
+        gb::String="no",
+        species::String="vertebrate",
+        is_file::String="true",
+        data_path::String=""
+    )
+        args = CmdArgs(;
+            fasta=fasta,
+            svg=svg,
+            rotate_to=rotate_to,
+            gb=gb,
+            species=species,
+            is_file=startswith(is_file, r"1|t|T")
+        )
+        if use_threads
+            fetch(Threads.@spawn emmafive(tempdirectory, args, data_path))
+
+        else
+            fetch(@spawnat :any emmafive(tempdirectory, args, data_path))
+        end
+    end
+    return task_emma5
 end

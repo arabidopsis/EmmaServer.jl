@@ -108,7 +108,7 @@ function main(args=ARGS)
 
     function terminate()
         @info "terminated..."
-        exit(0)
+        @async begin sleep(3); exit(0) end
         return "OK"
     end
 
@@ -117,12 +117,14 @@ function main(args=ARGS)
     end
 
     task_emma = make_task4(tmpdir, args[:use_threads])
+    task_emma5 = make_task5(tmpdir, args[:use_threads])
 
     # function, json_response, headers, name
     tasks = [
         (ping, true, JSON_RESP_HDRS, "ping"),
         (config, true, JSON_RESP_HDRS , "config"),
-        (task_emma, true, JSON_RESP_HDRS, "emma")
+        (task_emma, true, JSON_RESP_HDRS, "emma"),
+        (task_emma5, true, JSON_RESP_HDRS, "emma5")
     ]
 
     wt = args[:without_terminate]
@@ -158,7 +160,7 @@ function main(args=ARGS)
         if wait < 600
             error("can't sleep less that 600 seconds: $(wait)")
         end
-        @info "watching $watch every=$(wait)secs"
+        # @info "watching $watch every=$(wait)secs"
         @async clean(watch, wait; old=args[:max_days], verbose=false)
     end
     # Start the HTTP server in current process (Ctrl+C to interrupt)
@@ -172,6 +174,6 @@ function main(args=ARGS)
             @info "Abort!"
             exit(0)
         end
-        rethrow(e)
+        rethrow()
     end
 end
