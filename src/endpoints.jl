@@ -1,7 +1,7 @@
 # Define functions testfn1 and testfn2 that we shall expose
 
 import Distributed: @spawnat
-import Emma: emmaone, writeGFF, TempFile, drawgenome, rotate, writeGB
+import Emma: emmaone, writeGFF, TempFile, drawgenome, rotate, writeGB, cleanfiles
 import CodecZlib: GzipDecompressorStream
 using FASTX
 import Base64: base64decode
@@ -37,8 +37,12 @@ function emmatwo(tempfile::TempFile, infile::String, translation_table::Integer;
             read!(reader, target)
         end
     end
-    id, gffs, genome = emmaone(tempfile, target, translation_table)
-    return (id, gffs, genome, reset_log())
+    try
+        id, gffs, genome = emmaone(tempfile, target, translation_table)
+        return (id, gffs, genome, reset_log())
+    finally
+        cleanfiles(tempfile)
+    end
 end
 
 function emmathree(tempdirectory::String, args::CmdArgs; use_threads::Bool=false)
@@ -57,6 +61,7 @@ function emmathree(tempdirectory::String, args::CmdArgs; use_threads::Bool=false
     else
         id, gffs, genome, logs = fetch(@spawnat :any emmatwo(tempfile, fasta, translation_table; is_file=args.is_file))
     end
+
     offset = 0
     if args.rotate_to != ""
         gffs, genome, offset = rotate(args.rotate_to, gffs, genome)
@@ -128,8 +133,14 @@ function make_task2(tempdirectory::String=".", use_threads::Bool=false)
         species::String="vertebrate",
         is_file::String="true"
     )
-        args = CmdArgs(; fasta=fasta, svg=svg, rotate_to=rotate_to, gb=gb, species=species,
-            is_file=startswith(is_file, r"1|t|T"))
+        args = CmdArgs(;
+            fasta=fasta,
+            svg=svg,
+            rotate_to=rotate_to,
+            gb=gb,
+            species=species,
+            is_file=startswith(is_file, r"1|t|T")
+        )
         emmathree(tempdirectory, args; use_threads=use_threads)
     end
     return task_emma2
@@ -144,8 +155,14 @@ function make_task4(tempdirectory::String=".", use_threads::Bool=false)
         species::String="vertebrate",
         is_file::String="true"
     )
-        args = CmdArgs(; fasta=fasta, svg=svg, rotate_to=rotate_to, gb=gb, species=species, 
-            is_file=startswith(is_file, r"1|t|T"))
+        args = CmdArgs(;
+            fasta=fasta,
+            svg=svg,
+            rotate_to=rotate_to,
+            gb=gb,
+            species=species,
+            is_file=startswith(is_file, r"1|t|T")
+        )
         if use_threads
             fetch(Threads.@spawn emmafour(tempdirectory, args))
 
