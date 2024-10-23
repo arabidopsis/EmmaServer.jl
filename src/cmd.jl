@@ -129,7 +129,7 @@ function main(args=ARGS)
 
     wt = args[:without_terminate]
     if !wt
-        push!(tasks, (terminate, true, JSON_RESP_HDRS, "terminate"))
+        push!(tasks, (terminate, false, Dict{String,String}(), "terminate"))
     end
     # bind=true nid=nothing
     resp = create_responder(tasks, endpoint, true, nothing)
