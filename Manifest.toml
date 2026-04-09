@@ -386,11 +386,11 @@ version = "1.12.0"
 
 [[deps.JuliaWebAPI]]
 deps = ["Base64", "HTTP", "JSON", "Serialization", "Sockets", "ZMQ"]
-git-tree-sha1 = "3b141ae66eeebc45a7175780e1fa1a3f04922d1f"
+git-tree-sha1 = "3b25623ed4585c0d9d0715134c13d6ba4a4b7c73"
 repo-rev = "julia1.11"
 repo-url = "https://github.com/arabidopsis/JuliaWebAPI.jl"
 uuid = "480116ec-64ea-5dec-baca-db6b11e96e37"
-version = "0.7.2"
+version = "0.7.3"
 
 [[deps.LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
