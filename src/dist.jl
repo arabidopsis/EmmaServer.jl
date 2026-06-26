@@ -9,10 +9,11 @@ function arm(procs)
         eval(quote
             using EmmaServer
         end)
+    end
+    @everywhere procs begin
         EmmaServer.set_global_logger("warn")
     end
 end
-
 
 function init_workers(nworkers::Int)
     addprocs(nworkers; topology=:master_worker, exeflags="--project=$(Base.active_project())")
