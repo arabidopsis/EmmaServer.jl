@@ -10,7 +10,7 @@ function atomic_write(path::String, data)
         maybe_gzwrite(tmp) do io
             JSON3.write(io, data)
         end
-        mv(tmp, path)
+        mv(tmp, path; force=true)
     catch
         rm(tmp; force=true)
         rethrow()

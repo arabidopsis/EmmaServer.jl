@@ -2,6 +2,7 @@ import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
 import JuliaWebAPI: APIInvoker, run_http, process, create_responder
 import Logging
 import .EmmaEndpoints: make_task_emma_json, make_task_emma_write_json
+import .Chloe2Endpoints: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths
 
 function git_version()
     git_version(dirname(@__FILE__))
@@ -86,7 +87,6 @@ function main(args=ARGS)
     args = get_args(args)
     llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
     logger(llevel; console=args[:console])
-
     tmpdir = args[:tempdir]
     if tmpdir === nothing
         tmpdir = tempdir()
@@ -118,15 +118,15 @@ function main(args=ARGS)
         return args
     end
 
-    task_emma_json = make_task_emma_json(tmpdir, args[:use_threads])
-    task_emma_write_json = make_task_emma_write_json(tmpdir, args[:use_threads])
 
     # function, json_response, headers, name
     tasks = [
         (ping, true, JSON_RESP_HDRS, "ping"),
         (config, true, JSON_RESP_HDRS , "config"),
-        (task_emma_json, true, JSON_RESP_HDRS, "emma_json"),
-        (task_emma_write_json, true, JSON_RESP_HDRS, "emma_write_json")
+        (make_task_emma_json(tmpdir, args[:use_threads]), true, JSON_RESP_HDRS, "emma_json"),
+        (make_task_emma_write_json(tmpdir, args[:use_threads]), true, JSON_RESP_HDRS, "emma_write_json"),
+        (make_task_chloe2_json(tmpdir, args[:use_threads]), true, JSON_RESP_HDRS, "chloe2_json"),
+        (make_task_chloe2_write_json(tmpdir, args[:use_threads]), true, JSON_RESP_HDRS, "chloe2_write_json")
     ]
 
     wt = args[:without_terminate]
@@ -142,7 +142,7 @@ function main(args=ARGS)
 
     #Create the ZMQ client that talks to the ZMQ listener above
 
-    if ~args[:use_threads]
+    if !args[:use_threads]
         @info "using $(args[:workers]) workers"
         init_workers(args[:workers])
         if nchannels <= 0
@@ -150,6 +150,7 @@ function main(args=ARGS)
         end
     else
         @info "using $(Threads.nthreads()) threads"
+        get_model_lengths()
         if nchannels <= 0
             nchannels = Threads.nthreads()
         end
