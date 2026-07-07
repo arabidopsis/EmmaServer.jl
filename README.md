@@ -10,7 +10,7 @@ Then run
 
 ```bash
 fasta="/path/to/fasta.fa"
-curl "http://127.0.0.1:9998/emma?fasta=${fasta}&svg=yes"
+curl "http://127.0.0.1:9998/emma_json?fasta=${fasta}&svg=yes" > result.json
 ```
 ## Notes
 

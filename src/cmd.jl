@@ -1,6 +1,7 @@
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
 import JuliaWebAPI: APIInvoker, run_http, process, create_responder
 import Logging
+import .EmmaEndpoints: make_task_emma_json, make_task_emma_write_json
 
 function git_version()
     git_version(dirname(@__FILE__))
@@ -39,10 +40,11 @@ function get_args(args::Vector{String}=ARGS)
         help = "http connection port"
         "--tempdir", "-t"
         arg_type = String
-        help = "temporary file directory [default is system tempdir()]" 
+        help = "temporary file directory" 
         "--watch"
         arg_type = String
         help = "watch directory"
+        action = :append_arg
         "--max-days"
         arg_type = Float32
         default = 30.0
@@ -116,15 +118,15 @@ function main(args=ARGS)
         return args
     end
 
-    task_emma = make_task4(tmpdir, args[:use_threads])
-    task_emma5 = make_task5(tmpdir, args[:use_threads])
+    task_emma_json = make_task_emma_json(tmpdir, args[:use_threads])
+    task_emma_write_json = make_task_emma_write_json(tmpdir, args[:use_threads])
 
     # function, json_response, headers, name
     tasks = [
         (ping, true, JSON_RESP_HDRS, "ping"),
         (config, true, JSON_RESP_HDRS , "config"),
-        (task_emma, true, JSON_RESP_HDRS, "emma"),
-        (task_emma5, true, JSON_RESP_HDRS, "emma5")
+        (task_emma_json, true, JSON_RESP_HDRS, "emma_json"),
+        (task_emma_write_json, true, JSON_RESP_HDRS, "emma_write_json")
     ]
 
     wt = args[:without_terminate]
@@ -154,11 +156,11 @@ function main(args=ARGS)
     end
 
     watch = args[:watch]
-    if watch !== nothing
-        watch = expanduser(watch)
+    if watch !== nothing && length(watch) > 0
+        watch = [expanduser(w) for w in watch]
         wait = args[:sleep_hours] * 60 * 60
         if wait < 600
-            error("can't sleep less that 600 seconds: $(wait)")
+            error("can't sleep less than 600 seconds: $(wait)")
         end
         # @info "watching $watch every=$(wait)secs"
         @async clean(watch, wait; old=args[:max_days], verbose=false)

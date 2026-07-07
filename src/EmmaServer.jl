@@ -1,10 +1,11 @@
 module EmmaServer
-export task_emma, init_workers, get_args, main, BGLogger, set_global_logger, reset_log, emmatwo
+export init_workers, get_args, main, BGLogger, set_global_logger, reset_log
 
+include("utils.jl")
 include("clean.jl")
-include("cmd.jl")
 include("dist.jl")
-include("endpoints.jl")
 include("bglogger.jl")
+include("emma_endpoints.jl")
+include("cmd.jl")
 
 end # module EmmaServer
