@@ -1,5 +1,5 @@
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
-import JuliaWebAPI: APIInvoker, run_http, process, create_responder
+import JuliaWebAPI: APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat
 import Logging
 import .EmmaEndpoints: make_task_emma_json, make_task_emma_write_json
 import .Chloe2Endpoints: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths
@@ -134,11 +134,11 @@ function main(args=ARGS)
         push!(tasks, (terminate, false, Dict{String,String}(), "terminate"))
     end
     # bind=true nid=nothing
-    resp = create_responder(tasks, endpoint, true, nothing)
 
-    process(resp; async=true)
 
+    
     nchannels = args[:nchannels]
+
 
     #Create the ZMQ client that talks to the ZMQ listener above
 
@@ -155,7 +155,14 @@ function main(args=ARGS)
             nchannels = Threads.nthreads()
         end
     end
-
+    apiclnt::Vector{APIInvoker{ZMQTransport, JSONMsgFormat}} = []
+    for i in 1:nchannels
+        ep = "$(endpoint)-$(i)"
+        @info "starting channel $(i)"
+        push!(apiclnt, APIInvoker(ep))
+        resp = create_responder(tasks, ep, true, nothing)
+        process(resp; async=true)
+    end
     watch = args[:watch]
     if watch !== nothing && length(watch) > 0
         watch = [expanduser(w) for w in watch]
@@ -167,8 +174,6 @@ function main(args=ARGS)
         @async clean(watch, wait; old=args[:max_days], verbose=false)
     end
     # Start the HTTP server in current process (Ctrl+C to interrupt)
-    
-    apiclnt = [APIInvoker(endpoint) for i in 1:nchannels]
 
     try
         run_http(apiclnt, args[:port])
