@@ -96,9 +96,8 @@ function make_task_chloe2_write_json(tempdirectory::String=".", use_threads::Boo
         )
         if use_threads
             ret = fetch(Threads.@spawn chloe2_write_json(tempdirectory, args, data_path))
-
         else
-            fetch(@spawnat :any chloe2_write_json(tempdirectory, args, data_path))
+            ret = fetch(@spawnat :any chloe2_write_json(tempdirectory, args, data_path))
         end
         @info "done $(fasta)"
         ret

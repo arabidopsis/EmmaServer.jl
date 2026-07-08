@@ -133,20 +133,15 @@ function main(args=ARGS)
     if !wt
         push!(tasks, (terminate, false, Dict{String,String}(), "terminate"))
     end
-    # bind=true nid=nothing
-
-
-    
+   
     nchannels = args[:nchannels]
 
-
-    #Create the ZMQ client that talks to the ZMQ listener above
-
     if !args[:use_threads]
-        @info "using $(args[:workers]) workers"
-        init_workers(args[:workers])
+        workers = args[:workers]
+        @info "using $(workers) workers"
+        init_workers(workers)
         if nchannels <= 0
-            nchannels = args[:workers]
+            nchannels = workers
         end
     else
         @info "using $(Threads.nthreads()) threads"
@@ -158,8 +153,9 @@ function main(args=ARGS)
     apiclnt::Vector{APIInvoker{ZMQTransport, JSONMsgFormat}} = []
     for i in 1:nchannels
         ep = "$(endpoint)-$(i)"
-        @info "starting channel $(i)"
+        @info "starting channel: $(ep)"
         push!(apiclnt, APIInvoker(ep))
+        # bind=true nid=nothing
         resp = create_responder(tasks, ep, true, nothing)
         process(resp; async=true)
     end
@@ -174,7 +170,6 @@ function main(args=ARGS)
         @async clean(watch, wait; old=args[:max_days], verbose=false)
     end
     # Start the HTTP server in current process (Ctrl+C to interrupt)
-
     try
         run_http(apiclnt, args[:port])
     catch e
