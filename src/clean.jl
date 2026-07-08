@@ -13,6 +13,10 @@ function clean(directories::Vector{String}, wait::Real; old=2.0, verbose=false)
         nerr = 0
         try
             for directory in directories
+                if !isdir(directory) # might have been deleted since last check
+                    @warn "not a directory: $directory"
+                    continue
+                end
                 for (root, dirs, files) in walkdir(directory)
                     for file in files
                         f = joinpath(root, file)
