@@ -32,7 +32,7 @@ function chloe2_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     if !isfile(fasta)
         error("no such file: $(fasta)")
     end
-    io_buffer, task_logger = local_logger(Logging.Info; tee=tee)
+    io_buffer, task_logger = local_logger(Logging.Warn; tee=tee)
     buf = IOBuffer()
     bytes = maybe_gzread(fasta) do io
         bytes = read(io)
