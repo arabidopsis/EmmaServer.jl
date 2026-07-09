@@ -4,7 +4,9 @@ import Distributed: @spawnat
 import FASTX: FASTA
 import Base64: base64decode
 import Chloe2: chloe, get_model_lengths
-import ..EmmaServer: reset_log, atomic_write, maybe_gzread, maybe_gzwrite
+import Logging
+
+import ..EmmaServer: loglines, atomic_write, maybe_gzread, maybe_gzwrite, local_logger
 
 @kwdef struct CmdArgs
     fasta::String = ""
@@ -22,24 +24,29 @@ function read_fasta(infile::IO)::FASTA.Record
     return target
 end
 
-function chloe2_json(tempdirectory::String, args::CmdArgs)
+function chloe2_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     fasta = args.fasta
     fasta = expanduser(fasta)
     if !isfile(fasta)
         error("no such file: $(fasta)")
     end
+    io_buffer, task_logger = local_logger(Logging.Warn; tee=tee)
     buf = IOBuffer()
     bytes = maybe_gzread(fasta) do io
         bytes = read(io)
-        chloe(
-            IOBuffer(bytes);
-            outfile_gff=buf,
-            tempdir=tempdirectory,
-            reportpseudos=args.reportpseudos,
-            sensitivity=args.sensitivity
-        )
+        Logging.with_logger(task_logger) do
+            @warn "chloe2_json: $(fasta) $(length(bytes)) bytes"
+            chloe(
+                IOBuffer(bytes);
+                outfile_gff=buf,
+                tempdir=tempdirectory,
+                reportpseudos=args.reportpseudos,
+                sensitivity=args.sensitivity
+            )
+        end
         bytes
     end
+    logs = loglines(String(take!(io_buffer)))
     gff = String(take!(buf))
     record = read_fasta(IOBuffer(bytes))
     id, len = FASTA.identifier(record), length(FASTA.sequence(record))
@@ -47,7 +54,7 @@ function chloe2_json(tempdirectory::String, args::CmdArgs)
     ret = Dict(
         "fasta" => fasta,
         "gff" => gff,
-        "logs" => reset_log(),
+        "logs" => logs,
         "id" => id,
         "length" => len,
         "sensitivity" => args.sensitivity,
@@ -56,14 +63,14 @@ function chloe2_json(tempdirectory::String, args::CmdArgs)
     return ret
 end
 
-function chloe2_write_json(tempdirectory::String, args::CmdArgs, data_path::String)
-    dict = chloe2_json(tempdirectory, args)
+function chloe2_write_json(tempdirectory::String, args::CmdArgs, data_path::String; tee::Bool=false)
+    dict = chloe2_json(tempdirectory, args; tee=tee)
     atomic_write(data_path, dict)
 
     return true
 end
 
-function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=false)
+function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
     function task_chloe2_json(; fasta::String="", sensitivity::String="false", reportpseudos::String="false")
         args = CmdArgs(;
             fasta=fasta,
@@ -71,10 +78,10 @@ function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=fals
             reportpseudos=startswith(reportpseudos, r"1|t|T")
         )
         if use_threads
-            ret = fetch(Threads.@spawn chloe2_json(tempdirectory, args;))
+            ret = fetch(Threads.@spawn chloe2_json(tempdirectory, args; tee=tee))
 
         else
-            ret = fetch(@spawnat :any chloe2_json(tempdirectory, args))
+            ret = fetch(@spawnat :any chloe2_json(tempdirectory, args; tee=tee))
         end
         @info "done $(fasta): $(ret["id"]) $(ret["length"])"
         ret
@@ -82,7 +89,7 @@ function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=fals
     return task_chloe2_json
 end
 
-function make_task_chloe2_write_json(tempdirectory::String=".", use_threads::Bool=false)
+function make_task_chloe2_write_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
     function task_chloe2_write_json(;
         fasta::String="",
         sensitivity::String="false",
@@ -95,9 +102,9 @@ function make_task_chloe2_write_json(tempdirectory::String=".", use_threads::Boo
             reportpseudos=startswith(reportpseudos, r"1|t|T")
         )
         if use_threads
-            ret = fetch(Threads.@spawn chloe2_write_json(tempdirectory, args, data_path))
+            ret = fetch(Threads.@spawn chloe2_write_json(tempdirectory, args, data_path; tee=tee))
         else
-            ret = fetch(@spawnat :any chloe2_write_json(tempdirectory, args, data_path))
+            ret = fetch(@spawnat :any chloe2_write_json(tempdirectory, args, data_path; tee=tee))
         end
         @info "done $(fasta)"
         ret

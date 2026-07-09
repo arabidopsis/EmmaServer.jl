@@ -1,6 +1,8 @@
 import Random
 import JSON3
 import CodecZlib: GzipDecompressorStream, GzipCompressorStream
+import Logging
+import LoggingExtras
 
 function atomic_write(path::String, data)
     parent = dirname(path)
@@ -39,4 +41,18 @@ function maybe_gzwrite(f::Function, filename::String)
     else
         open(f, filename, "w")
     end
+end
+
+function loglines(logs::AbstractString)::Vector{String}
+    [replace(s, '┌' => '[') for s in split(logs, '\n'; keepempty=false) if !startswith(s, "└")]
+end
+
+function local_logger(level=Logging.Info; tee::Bool=false)::Tuple{IOBuffer,Logging.AbstractLogger}
+    io_buffer = IOBuffer()
+
+    logger = Logging.ConsoleLogger(io_buffer, level)
+    if tee
+        logger = LoggingExtras.TeeLogger(logger, Logging.global_logger())
+    end
+    return io_buffer, logger
 end

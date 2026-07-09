@@ -4,8 +4,8 @@ import Distributed: @spawnat
 import Emma: emmaone, TempFile, drawgenome, rotate, writeGB, cleanfiles
 import FASTX: FASTA
 import Base64: base64decode
-
-import ..EmmaServer: reset_log, atomic_write, maybe_gzread, maybe_gzwrite
+import Logging
+import ..EmmaServer: atomic_write, maybe_gzread, maybe_gzwrite, loglines, local_logger
 
 @kwdef struct CmdArgs
     fasta::String = ""
@@ -16,7 +16,7 @@ import ..EmmaServer: reset_log, atomic_write, maybe_gzread, maybe_gzwrite
     is_file::Bool = true # fasta is a filename else the b64 encoded body of the fasta file
 end
 
-function _emmatwo(tempfile::TempFile, infile::String, translation_table::Integer; is_file=true)
+function _emmatwo(tempfile::TempFile, infile::String, translation_table::Integer; is_file=true, tee::Bool=false)
     target = FASTA.Record()
     if is_file
         maybe_gzread(infile) do io
@@ -31,14 +31,17 @@ function _emmatwo(tempfile::TempFile, infile::String, translation_table::Integer
         end
     end
     try
-        id, gffs, genome = emmaone(tempfile, target, translation_table)
-        return (id, gffs, genome, reset_log())
+        io_buffer, task_logger = local_logger(Logging.Warn; tee=tee)
+        id, gffs, genome = Logging.with_logger(task_logger) do
+            emmaone(tempfile, target, translation_table)
+        end
+        return (id, gffs, genome, loglines(String(take!(io_buffer))))
     finally
         cleanfiles(tempfile)
     end
 end
 
-function emma_json(tempdirectory::String, args::CmdArgs)
+function emma_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     fasta = args.fasta
     if args.is_file
         fasta = expanduser(fasta)
@@ -48,7 +51,7 @@ function emma_json(tempdirectory::String, args::CmdArgs)
     end
     translation_table = args.species == "vertebrate" ? 2 : 5
     tempfile = TempFile(tempdirectory)
-    id, gffs, genome, logs = _emmatwo(tempfile, fasta, translation_table; is_file=args.is_file)
+    id, gffs, genome, logs = _emmatwo(tempfile, fasta, translation_table; is_file=args.is_file, tee=tee)
 
     offset = 0
     if args.rotate_to != ""
@@ -75,14 +78,14 @@ function emma_json(tempdirectory::String, args::CmdArgs)
     return ret
 end
 
-function emma_write_json(tempdirectory::String, args::CmdArgs, data_path::String)
-    dict = emma_json(tempdirectory, args)
+function emma_write_json(tempdirectory::String, args::CmdArgs, data_path::String; tee::Bool=false)
+    dict = emma_json(tempdirectory, args; tee=tee)
     atomic_write(data_path, dict)
 
     return true
 end
 
-function make_task_emma_json(tempdirectory::String=".", use_threads::Bool=false)
+function make_task_emma_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
     function task_emma_json(;
         fasta::String="",
         svg::String="no",
@@ -100,16 +103,17 @@ function make_task_emma_json(tempdirectory::String=".", use_threads::Bool=false)
             is_file=startswith(is_file, r"1|t|T")
         )
         if use_threads
-            fetch(Threads.@spawn emma_json(tempdirectory, args))
+            ret = fetch(Threads.@spawn emma_json(tempdirectory, args; tee=tee))
 
         else
-            fetch(@spawnat :any emma_json(tempdirectory, args))
+            ret = fetch(@spawnat :any emma_json(tempdirectory, args; tee=tee))
         end
+        return ret
     end
     return task_emma_json
 end
 
-function make_task_emma_write_json(tempdirectory::String=".", use_threads::Bool=false)
+function make_task_emma_write_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
     function task_emma_write_json(;
         fasta::String="",
         svg::String="no",
@@ -128,10 +132,10 @@ function make_task_emma_write_json(tempdirectory::String=".", use_threads::Bool=
             is_file=startswith(is_file, r"1|t|T")
         )
         if use_threads
-            fetch(Threads.@spawn emma_write_json(tempdirectory, args, data_path))
+            fetch(Threads.@spawn emma_write_json(tempdirectory, args, data_path; tee=tee))
 
         else
-            fetch(@spawnat :any emma_write_json(tempdirectory, args, data_path))
+            fetch(@spawnat :any emma_write_json(tempdirectory, args, data_path; tee=tee))
         end
     end
     return task_emma_write_json

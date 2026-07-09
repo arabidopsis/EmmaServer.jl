@@ -27,7 +27,7 @@ function get_args(args::Vector{String}=ARGS)
         "--workers", "-w"
         arg_type = Int
         default = 3
-        help = "number of distributed processes"
+        help = "number of distributed processes or threads [default: equal to workers or nthreads]"
         "--nchannels", "-c"
         arg_type = Int
         default = -1
@@ -63,6 +63,9 @@ function get_args(args::Vector{String}=ARGS)
         "--use-threads"
         action = :store_true
         help = "use threads instead of processes"
+        "--tee"
+        action = :store_true
+        help = "also print logs to the console"
     end
 
     parse_args(args, distributed_args; as_symbols=true)
@@ -117,16 +120,16 @@ function main(args=ARGS)
     function config()
         return args
     end
-
+    tee = args[:tee]
 
     # function, json_response, headers, name
     tasks = [
         (ping, true, JSON_RESP_HDRS, "ping"),
         (config, true, JSON_RESP_HDRS , "config"),
-        (make_task_emma_json(tmpdir, args[:use_threads]), true, JSON_RESP_HDRS, "emma_json"),
-        (make_task_emma_write_json(tmpdir, args[:use_threads]), true, JSON_RESP_HDRS, "emma_write_json"),
-        (make_task_chloe2_json(tmpdir, args[:use_threads]), true, JSON_RESP_HDRS, "chloe2_json"),
-        (make_task_chloe2_write_json(tmpdir, args[:use_threads]), true, JSON_RESP_HDRS, "chloe2_write_json")
+        (make_task_emma_json(tmpdir, args[:use_threads]; tee=tee), true, JSON_RESP_HDRS, "emma_json"),
+        (make_task_emma_write_json(tmpdir, args[:use_threads]; tee=tee), true, JSON_RESP_HDRS, "emma_write_json"),
+        (make_task_chloe2_json(tmpdir, args[:use_threads]; tee=tee), true, JSON_RESP_HDRS, "chloe2_json"),
+        (make_task_chloe2_write_json(tmpdir, args[:use_threads]; tee=tee), true, JSON_RESP_HDRS, "chloe2_write_json")
     ]
 
     wt = args[:without_terminate]
@@ -169,6 +172,8 @@ function main(args=ARGS)
         # @info "watching $watch every=$(wait)secs"
         @async clean(watch, wait; old=args[:max_days], verbose=false)
     end
+    # for config output
+    args[:nchannels] = nchannels
     # Start the HTTP server in current process (Ctrl+C to interrupt)
     try
         run_http(apiclnt, args[:port])
