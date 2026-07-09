@@ -22,7 +22,7 @@ fastas=(~/Sites/websites/chloe/kelly/NC_000932.1.fa
 ~/Sites/websites/chloe/kelly/NC_006290.1.fa)
 
 PORT=9998
-if [ -f junk ]; then
+if [ -d junk ]; then
     rm -rf junk
 fi
 mkdir -p junk
