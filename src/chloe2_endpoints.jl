@@ -2,13 +2,12 @@ module Chloe2Endpoints
 export make_task_chloe2_write_json, make_task_chloe2_json, get_model_lengths
 import Distributed: @spawnat
 import FASTX: FASTA
-import Base64: base64decode
 import Chloe2: chloe, get_model_lengths
 import Logging
 
 import ..EmmaServer: loglines, atomic_write, maybe_gzread, maybe_gzwrite, local_logger
 
-# true for strings line 1, true, TRUE, True, yes ,Yes, etc.
+# true for strings like 1, true, TRUE, True, yes ,Yes, etc.
 const YES = r"1|t|T|y|Y"
 
 @kwdef struct CmdArgs

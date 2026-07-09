@@ -110,7 +110,7 @@ function main(args=ARGS)
     function terminate()
         @info "terminated..."
         @async begin sleep(3); exit(0) end
-        return "OK"
+        return "OK\n"
     end
 
     function config()

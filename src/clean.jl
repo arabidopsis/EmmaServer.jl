@@ -30,14 +30,15 @@ function clean(directories::Vector{String}, wait::Real; old=2.0, verbose=false)
                         end
                     end
                 end
+                open(joinpath(directory, ".clean"), "w") do out
+                    write(out, "$(unix2datetime(now)): $(nerr)\n")
+                end
             end
         catch e
             @error "walkdir: $(e)"
             nerr += 1
         end
-        open(joinpath(directory, ".clean"), "w") do out
-            write(out, "$(unix2datetime(now)): $(nerr)\n")
-        end
+
         sleep(wait)
     end
 end
