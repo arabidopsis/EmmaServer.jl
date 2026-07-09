@@ -35,7 +35,7 @@ function chloe2_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     bytes = maybe_gzread(fasta) do io
         bytes = read(io)
         Logging.with_logger(task_logger) do
-            @warn "chloe2_json: $(fasta) $(length(bytes)) bytes"
+            # @warn "chloe2_json: $(basename(fasta)) $(length(bytes)) bytes"
             chloe(
                 IOBuffer(bytes);
                 outfile_gff=buf,
