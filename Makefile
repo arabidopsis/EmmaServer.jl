@@ -3,7 +3,7 @@ JULIADIR=`julia -e 'print(Sys.BINDIR)'`/..
 TEMPDIR=`realpath ../emma-website/instance/datadir`
 # requires a python environment with flask-nginx installed
 # e.g. uv tool install flask-nginx
-bg-service:
+service:
 	footprint config template -o emma-annotator.service etc/emma-annotator.service \
 		appname=emmaserver port=9998 julia-dir="$(JULIADIR)" threads=8 watch=$(TEMPDIR) max-days=30 \
 		annotator-dir=. depot-path=$(JULIA_DEPOT_PATH)
