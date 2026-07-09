@@ -8,6 +8,7 @@ import Logging
 
 import ..EmmaServer: loglines, atomic_write, maybe_gzread, maybe_gzwrite, local_logger
 
+# true for strings line 1, true, TRUE, True, yes ,Yes, etc.
 const YES = r"1|t|T|y|Y"
 
 @kwdef struct CmdArgs
@@ -73,6 +74,7 @@ function chloe2_write_json(tempdirectory::String, args::CmdArgs, data_path::Stri
 end
 
 function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
+    # /chloe2_json?fasta=...&sensitivity=...&reportpseudos=...
     function task_chloe2_json(; fasta::String="", sensitivity::String="false", reportpseudos::String="false")
         args = CmdArgs(;
             fasta=fasta,
@@ -92,6 +94,7 @@ function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=fals
 end
 
 function make_task_chloe2_write_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
+    # /chloe2_write_json?fasta=...&sensitivity=...&reportpseudos=...&data_path=...
     function task_chloe2_write_json(;
         fasta::String="",
         sensitivity::String="false",

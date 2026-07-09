@@ -11,6 +11,8 @@ function arm(procs)
         end)
     end
     @everywhere procs begin
+        # read Chloe2 model lengths into a global variable so that the workers can use it
+        # same function as Chloe2.jl/src/features.jl::get_model_lengths
         EmmaServer.get_model_lengths()
     end
 end
