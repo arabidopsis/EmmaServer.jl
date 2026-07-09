@@ -16,6 +16,8 @@ import ..EmmaServer: atomic_write, maybe_gzread, maybe_gzwrite, loglines, local_
     is_file::Bool = true # fasta is a filename else the b64 encoded body of the fasta file
 end
 
+const YES = r"1|t|T|y|Y"
+
 function _emmatwo(tempfile::TempFile, infile::String, translation_table::Integer; is_file=true, tee::Bool=false)
     target = FASTA.Record()
     if is_file
@@ -100,7 +102,7 @@ function make_task_emma_json(tempdirectory::String=".", use_threads::Bool=false;
             rotate_to=rotate_to,
             gb=gb,
             species=species,
-            is_file=startswith(is_file, r"1|t|T")
+            is_file=startswith(is_file, YES)
         )
         if use_threads
             ret = fetch(Threads.@spawn emma_json(tempdirectory, args; tee=tee))
@@ -129,7 +131,7 @@ function make_task_emma_write_json(tempdirectory::String=".", use_threads::Bool=
             rotate_to=rotate_to,
             gb=gb,
             species=species,
-            is_file=startswith(is_file, r"1|t|T")
+            is_file=startswith(is_file, YES)
         )
         if use_threads
             fetch(Threads.@spawn emma_write_json(tempdirectory, args, data_path; tee=tee))

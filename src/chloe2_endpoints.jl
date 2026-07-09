@@ -8,6 +8,8 @@ import Logging
 
 import ..EmmaServer: loglines, atomic_write, maybe_gzread, maybe_gzwrite, local_logger
 
+const YES = r"1|t|T|y|Y"
+
 @kwdef struct CmdArgs
     fasta::String = ""
     sensitivity::Bool = false
@@ -30,12 +32,11 @@ function chloe2_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     if !isfile(fasta)
         error("no such file: $(fasta)")
     end
-    io_buffer, task_logger = local_logger(Logging.Warn; tee=tee)
+    io_buffer, task_logger = local_logger(Logging.Info; tee=tee)
     buf = IOBuffer()
     bytes = maybe_gzread(fasta) do io
         bytes = read(io)
         Logging.with_logger(task_logger) do
-            # @warn "chloe2_json: $(basename(fasta)) $(length(bytes)) bytes"
             chloe(
                 IOBuffer(bytes);
                 outfile_gff=buf,
@@ -74,8 +75,8 @@ function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=fals
     function task_chloe2_json(; fasta::String="", sensitivity::String="false", reportpseudos::String="false")
         args = CmdArgs(;
             fasta=fasta,
-            sensitivity=startswith(sensitivity, r"1|t|T"),
-            reportpseudos=startswith(reportpseudos, r"1|t|T")
+            sensitivity=startswith(sensitivity, YES),
+            reportpseudos=startswith(reportpseudos, YES)
         )
         if use_threads
             ret = fetch(Threads.@spawn chloe2_json(tempdirectory, args; tee=tee))
@@ -98,8 +99,8 @@ function make_task_chloe2_write_json(tempdirectory::String=".", use_threads::Boo
     )
         args = CmdArgs(;
             fasta=fasta,
-            sensitivity=startswith(sensitivity, r"1|t|T"),
-            reportpseudos=startswith(reportpseudos, r"1|t|T")
+            sensitivity=startswith(sensitivity, YES),
+            reportpseudos=startswith(reportpseudos, YES)
         )
         if use_threads
             ret = fetch(Threads.@spawn chloe2_write_json(tempdirectory, args, data_path; tee=tee))
