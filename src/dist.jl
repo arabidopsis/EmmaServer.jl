@@ -11,7 +11,6 @@ function arm(procs)
         end)
     end
     @everywhere procs begin
-        EmmaServer.set_global_logger("warn")
         EmmaServer.get_model_lengths()
     end
 end

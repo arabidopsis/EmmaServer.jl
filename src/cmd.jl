@@ -54,9 +54,9 @@ function get_args(args::Vector{String}=ARGS)
         arg_type = Float32
         default = 2.0
         help = "sleep in hours between directory sweep"
-        "--console"
-        action = :store_true
-        help = "use the console logger"
+        # "--console"
+        # action = :store_true
+        # help = "use the console logger"
         "--without-terminate", "-x"
         action = :store_true
         help = "don't have a terminate endpoint"
@@ -74,12 +74,8 @@ end
 const LOGLEVELS = Dict("info" => Logging.Info, "debug" => Logging.Debug, "warn" => Logging.Warn,
     "error" => Logging.Error)
 
-function logger(level; console=false)
-    if console
-        logger = Logging.ConsoleLogger(stderr, level; meta_formatter=Logging.default_metafmt)
-    else
-        logger = Logging.SimpleLogger(stdout, level)
-    end
+function logger(level)
+    logger = Logging.ConsoleLogger(stdout, level; meta_formatter=Logging.default_metafmt)
     Logging.global_logger(logger)
 end
 
@@ -89,7 +85,7 @@ function main(args=ARGS)
     Sys.set_process_title("emma-distributed")
     args = get_args(args)
     llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
-    logger(llevel; console=args[:console])
+    logger(llevel)
     tmpdir = args[:tempdir]
     if tmpdir === nothing
         tmpdir = tempdir()
