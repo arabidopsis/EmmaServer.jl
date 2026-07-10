@@ -35,5 +35,6 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
 exec julia --startup-file=no --project=. --threads=$workers \
     srvr.jl --tee --level=info --workers=$workers $use_threads
