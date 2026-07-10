@@ -9,9 +9,9 @@ import ..EmmaServer: atomic_write, maybe_gzread, maybe_gzwrite, loglines, local_
 
 @kwdef struct CmdArgs
     fasta::String = ""
-    svg::String = "no"
-    rotate_to::String = ""
-    gb::String = "no"
+    svg::Bool = false
+    rotate_to::String = "" # rotate to this feature position in the genome
+    gb::Bool = false
     species::String = "vertebrate"
     is_file::Bool = true # fasta is a filename else the b64 encoded body of the fasta file
 end
@@ -67,11 +67,11 @@ function emma_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
         "species" => args.species,
         "rotate_to" => args.rotate_to
     )
-    if args.svg == "yes"
+    if args.svg
         # mRNAless = filter(x -> x.ftype != "mRNA" && x.ftype != "CDS", gffs)
         ret["svg"] = drawgenome(id, length(genome), gffs)
     end
-    if args.gb == "yes"
+    if args.gb
         buf = IOBuffer()
         writeGB(buf, tempfile.uuid, id, translation_table, gffs)
         ret["gb"] = String(take!(buf))
@@ -98,9 +98,9 @@ function make_task_emma_json(tempdirectory::String=".", use_threads::Bool=false;
     )
         args = CmdArgs(;
             fasta=fasta,
-            svg=svg,
+            svg=startswith(svg, YES),
             rotate_to=rotate_to,
-            gb=gb,
+            gb=startswith(gb, YES),
             species=species,
             is_file=startswith(is_file, YES)
         )
@@ -127,9 +127,9 @@ function make_task_emma_write_json(tempdirectory::String=".", use_threads::Bool=
     )
         args = CmdArgs(;
             fasta=fasta,
-            svg=svg,
+            svg=startswith(svg, YES),
             rotate_to=rotate_to,
-            gb=gb,
+            gb=startswith(gb, YES),
             species=species,
             is_file=startswith(is_file, YES)
         )
