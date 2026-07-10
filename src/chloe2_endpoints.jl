@@ -28,10 +28,6 @@ end
 
 function chloe2_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     fasta = args.fasta
-    fasta = expanduser(fasta)
-    if !isfile(fasta)
-        error("no such file: $(fasta)")
-    end
     # @info "running chloe2 with pseudo=$(args.reportpseudos)"
     io_buffer, task_logger = local_logger(Logging.Warn; tee=tee)
     buf = IOBuffer()
@@ -75,6 +71,17 @@ end
 function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
     # /chloe2_json?fasta=...&sensitivity=...&reportpseudos=...
     function task_chloe2_json(; fasta::String="", sensitivity::String="false", reportpseudos::String="false")
+        # calling error(msg) results in a code= -2 and a data message of 
+        # "ErrorException(\"chloe2_json: fasta file must be specified\")"
+        # otherwise you will get a code=-2 and a data message of "TaskFailedException(Task (failed) @0x00007e6a6c623850)"
+        # Ugh!
+        if fasta == ""
+            error("chloe2_json: fasta file must be specified")
+        end
+        # fasta = expanduser(fasta)
+        if !isfile(fasta)
+            error("chloe2_json: no such file: $(fasta)")
+        end
         args = CmdArgs(;
             fasta=fasta,
             sensitivity=startswith(sensitivity, YES),
@@ -93,13 +100,24 @@ function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=fals
 end
 
 function make_task_chloe2_write_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
-    # /chloe2_write_json?fasta=...&sensitivity=...&reportpseudos=...&data_path=...
+    # a reference to this url will call this function:
+    # https://127.0.0.1:9998/chloe2_write_json?fasta=...&sensitivity=...&reportpseudos=...&data_path=...
     function task_chloe2_write_json(;
         fasta::String="",
         sensitivity::String="false",
         reportpseudos::String="false",
         data_path::String=""
     )
+        if fasta == ""
+            error("chloe2_write_json: fasta file must be specified")
+        end
+        # fasta = expanduser(fasta)
+        if !isfile(fasta)
+            error("chloe2_write_json: no such file: $(fasta)")
+        end
+        if data_path == ""
+            error("chloe2_write_json: data_path must be specified")
+        end
         args = CmdArgs(;
             fasta=fasta,
             sensitivity=startswith(sensitivity, YES),

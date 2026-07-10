@@ -104,6 +104,14 @@ function make_task_emma_json(tempdirectory::String=".", use_threads::Bool=false;
             species=species,
             is_file=startswith(is_file, YES)
         )
+
+        if args.fasta == ""
+            error("emma_json: fasta file must be specified")
+        end
+
+        if args.is_file && !isfile(args.fasta)
+            error("emma_json: fasta file does not exist")
+        end
         if use_threads
             ret = fetch(Threads.@spawn emma_json(tempdirectory, args; tee=tee))
 
@@ -133,6 +141,16 @@ function make_task_emma_write_json(tempdirectory::String=".", use_threads::Bool=
             species=species,
             is_file=startswith(is_file, YES)
         )
+        if args.fasta == ""
+            error("emma_write_json: fasta file must be specified")
+        end
+        if data_path == ""
+            error("emma_write_json: data_path must be specified")
+        end
+
+        if args.is_file && !isfile(args.fasta)
+            error("emma_write_json: fasta file does not exist")
+        end
         if use_threads
             fetch(Threads.@spawn emma_write_json(tempdirectory, args, data_path; tee=tee))
 
