@@ -26,46 +26,43 @@ function get_args(args::Vector{String}=ARGS)
         help = "log level (info,warn,error,debug)"
         "--workers", "-w"
         arg_type = Int
-        default = 3
-        help = "number of distributed processes or threads [default: equal to workers or nthreads]"
-        "--nchannels", "-c"
-        arg_type = Int
-        default = -1
-        help = "number of API channels for http server [default == workers or nthreads]"
+        default = 4
+        help = "number of distributed processes [default = 4], ignored if --use-threads is specified"
         "--endpoint", "-e"
         arg_type = String
-        help = "endpoint for zmq connection [default = ipc:///tmp/emma-distributed{port}]"
+        help = "endpoint for zmq connection [default = ipc:///{tempdir}/emma-distributed{port}]"
         "--port", "-p"
         arg_type = Int
         default = 9998
         help = "http connection port"
         "--tempdir", "-t"
         arg_type = String
-        help = "temporary file directory" 
+        help = "temporary file directory [default = tempdir()]" 
         "--watch"
         arg_type = String
         help = "watch directory"
         action = :append_arg
+        help = "cleanup files in the watch directory (can be specified multiple times)"
         "--max-days"
         arg_type = Float32
         default = 30.0
-        help = "files older than this in days will be removed"
+        help = "files older than this in days will be removed (see --watch)"
         "--sleep-hours"
         arg_type = Float32
         default = 2.0
-        help = "sleep in hours between directory sweep"
+        help = "sleep in hours between directory sweep (see --watch)"
         # "--console"
         # action = :store_true
         # help = "use the console logger"
         "--without-terminate", "-x"
         action = :store_true
-        help = "don't have a terminate endpoint"
+        help = "don't have a \"terminate\" endpoint"
         "--use-threads"
         action = :store_true
-        help = "use threads instead of processes"
+        help = "use threads instead of processes (Threads.nthreads() [--threads=n] must be > 1 for this to work)"
         "--tee"
         action = :store_true
-        help = "also print logs to the console"
+        help = "also print logs to the console when processing requests"
     end
 
     parse_args(args, distributed_args; as_symbols=true)
@@ -77,6 +74,9 @@ const LOGLEVELS = Dict("info" => Logging.Info, "debug" => Logging.Debug, "warn" 
 const JSON_RESP_HDRS = Dict{String,String}("Content-Type" => "application/json; charset=utf-8")
 
 function set_logger(level)
+    # the systemd.service file has StandardOutput=append:/path/to/emma-annotator.log.
+    # If you want to see the log output of the background annotators then use ``--tee``
+    # otherwise it will be captured and sent back to the frontend via the API response.
     logger = Logging.ConsoleLogger(stdout, level; meta_formatter=Logging.default_metafmt)
     Logging.global_logger(logger)
 end
@@ -112,18 +112,18 @@ function main(args=ARGS)
         # need to sleep so the terminate function is fully processed by the APIResponder,
         # and has sent terminate's value back to the client.
         sleep(0.3)
-        @info "sending terminate request to $(length(apiclnt)) channels."
+        @info "sending terminate requests to $(length(apiclnt)) channels."
         for api in apiclnt
             apicall(api, ":terminate")
         end
-        @info("exiting...")
+        @info("exiting... 👋")
         exit(0)
 
     end
     function terminate()
         @info "terminating..."
         # The problem here is that we can't terminate all the channels while we
-        # are still being processed by one! So we delegate to an async task
+        # are still being processed by one of them! So we delegate to an async task
         # that will terminate all channels after a short sleep.
         @async terminate_later()
         return "OK\n"
@@ -135,36 +135,37 @@ function main(args=ARGS)
     tee = args[:tee]
 
     # function, json_response, headers, name
+    json_response = true
     ut = args[:use_threads]
     tasks = [
-        (ping, true, JSON_RESP_HDRS, "ping"),
-        (config, true, JSON_RESP_HDRS , "config"),
-        (make_task_emma_json(tmpdir, ut; tee=tee), true, JSON_RESP_HDRS, "emma_json"),
-        (make_task_emma_write_json(tmpdir, ut; tee=tee), true, JSON_RESP_HDRS, "emma_write_json"),
-        (make_task_chloe2_json(tmpdir, ut; tee=tee), true, JSON_RESP_HDRS, "chloe2_json"),
-        (make_task_chloe2_write_json(tmpdir, ut; tee=tee), true, JSON_RESP_HDRS, "chloe2_write_json")
+        (ping, json_response, JSON_RESP_HDRS, "ping"),
+        (config, json_response, JSON_RESP_HDRS , "config"),
+        (make_task_emma_json(tmpdir, ut; tee=tee), json_response, JSON_RESP_HDRS, "emma_json"),
+        (make_task_emma_write_json(tmpdir, ut; tee=tee), json_response, JSON_RESP_HDRS, "emma_write_json"),
+        (make_task_chloe2_json(tmpdir, ut; tee=tee), json_response, JSON_RESP_HDRS, "chloe2_json"),
+        (make_task_chloe2_write_json(tmpdir, ut; tee=tee), json_response, JSON_RESP_HDRS, "chloe2_write_json")
     ]
 
     wt = args[:without_terminate]
     if !wt
+        # not a json response, so we can just return a string.
         push!(tasks, (terminate, false, Dict{String,String}(), "terminate"))
     end
    
-    nchannels = args[:nchannels]
 
     if !ut
         workers = args[:workers]
         @info "using $(workers) workers"
         init_workers(workers)
-        if nchannels <= 0
-            nchannels = workers
-        end
+        nchannels = workers
     else
         @info "using $(Threads.nthreads()) threads"
-        get_model_lengths()
-        if nchannels <= 0
-            nchannels = Threads.nthreads()
+        nchannels = Threads.nthreads()
+        if nchannels < 2
+            error("Threads.nthreads() must be > 1 for --use-threads to work [set --threads=n *julia* option]")
         end
+        get_model_lengths()
+
     end
     apiclnt::Vector{APIInvoker{ZMQTransport, JSONMsgFormat}} = []
     for i in 1:nchannels
