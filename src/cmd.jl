@@ -74,18 +74,19 @@ end
 const LOGLEVELS = Dict("info" => Logging.Info, "debug" => Logging.Debug, "warn" => Logging.Warn,
     "error" => Logging.Error)
 
-function logger(level)
+const JSON_RESP_HDRS = Dict{String,String}("Content-Type" => "application/json; charset=utf-8")
+
+function set_logger(level)
     logger = Logging.ConsoleLogger(stdout, level; meta_formatter=Logging.default_metafmt)
     Logging.global_logger(logger)
 end
 
-const JSON_RESP_HDRS = Dict{String,String}("Content-Type" => "application/json; charset=utf-8")
-
 function main(args=ARGS)
     Sys.set_process_title("emma-distributed")
     args = get_args(args)
-    llevel = get(LOGLEVELS, lowercase(args[:level]), Logging.Warn)
-    logger(llevel)
+
+    set_logger(get(LOGLEVELS, lowercase(args[:level]), Logging.Warn))
+    
     tmpdir = args[:tempdir]
     if tmpdir === nothing
         tmpdir = tempdir()
@@ -93,8 +94,7 @@ function main(args=ARGS)
     if !isdir(tmpdir)
         error("no such directory: \"$(tmpdir)\"")
     end
-    # endpoint = "tcp://127.0.0.1:9999"
-    #endpoint = "inproc://test-1"
+
     endpoint = args[:endpoint]
     if endpoint === nothing
         endpoint = "ipc://$(tmpdir)/emma-distributed$(args[:port])"
@@ -109,7 +109,9 @@ function main(args=ARGS)
     end
 
     function terminate_later()
-        sleep(0.3) # give the client a chance to receive the response before we exit
+        # need to sleep so the terminate function is fully processed by the APIResponder,
+        # and has sent terminate's value back to the client.
+        sleep(0.3)
         @info "sending terminate request to $(length(apiclnt)) channels."
         for api in apiclnt
             apicall(api, ":terminate")
@@ -120,7 +122,7 @@ function main(args=ARGS)
     end
     function terminate()
         @info "terminating..."
-        # problem here is that we can't terminate all the channels while we
+        # The problem here is that we can't terminate all the channels while we
         # are still being processed by one! So we delegate to an async task
         # that will terminate all channels after a short sleep.
         @async terminate_later()
@@ -133,13 +135,14 @@ function main(args=ARGS)
     tee = args[:tee]
 
     # function, json_response, headers, name
+    ut = args[:use_threads]
     tasks = [
         (ping, true, JSON_RESP_HDRS, "ping"),
         (config, true, JSON_RESP_HDRS , "config"),
-        (make_task_emma_json(tmpdir, args[:use_threads]; tee=tee), true, JSON_RESP_HDRS, "emma_json"),
-        (make_task_emma_write_json(tmpdir, args[:use_threads]; tee=tee), true, JSON_RESP_HDRS, "emma_write_json"),
-        (make_task_chloe2_json(tmpdir, args[:use_threads]; tee=tee), true, JSON_RESP_HDRS, "chloe2_json"),
-        (make_task_chloe2_write_json(tmpdir, args[:use_threads]; tee=tee), true, JSON_RESP_HDRS, "chloe2_write_json")
+        (make_task_emma_json(tmpdir, ut; tee=tee), true, JSON_RESP_HDRS, "emma_json"),
+        (make_task_emma_write_json(tmpdir, ut; tee=tee), true, JSON_RESP_HDRS, "emma_write_json"),
+        (make_task_chloe2_json(tmpdir, ut; tee=tee), true, JSON_RESP_HDRS, "chloe2_json"),
+        (make_task_chloe2_write_json(tmpdir, ut; tee=tee), true, JSON_RESP_HDRS, "chloe2_write_json")
     ]
 
     wt = args[:without_terminate]
@@ -149,7 +152,7 @@ function main(args=ARGS)
    
     nchannels = args[:nchannels]
 
-    if !args[:use_threads]
+    if !ut
         workers = args[:workers]
         @info "using $(workers) workers"
         init_workers(workers)
@@ -188,6 +191,7 @@ function main(args=ARGS)
     try
         run_http(apiclnt, args[:port])
     catch e
+        # Ctrl+C never gets here :(
         if e isa InterruptException
             @info "Abort!"
             exit(0)
