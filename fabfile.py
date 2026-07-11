@@ -29,6 +29,25 @@ def get_srdir(c):
     return MACHINES[f"{c.user}@{c.original_host}"]
 
 
+def instantiate_(c):
+    """Instantiate EmmaServer.jl project."""
+    with c.cd(get_srdir(c)):
+        secho("instantiating", fg="green", bold=True)
+        result = c.run(
+            "PATH=~/.juliaup/bin:$PATH make instantiate",
+            # hide=True,
+            warn=True,
+            shell=True,
+            pty=True,
+        )
+        if result.failed:
+            secho(f"julia instantiate failed! {result.stderr}", fg="red", bold=True)
+            return False
+        else:
+            secho(f"success! {result.stdout}", fg="green", bold=True)
+            return True
+
+
 @task(hosts=HOSTS)
 def update(c):
     """Update EmmaServer.jl code from github and restart (if any changes)."""
@@ -41,27 +60,16 @@ def update(c):
         res = c.run("git pull", warn=True)
 
         if not res.failed and not git_uptodate(res):
-            instantiate(c)
-            secho("restarting EmmaServer.jl", fg="blue", bold=True)
-            c.run(f"sudo systemctl restart {SERVICE}", pty=True)
+            if instantiate_(c):
+                secho("restarting EmmaServer.jl", fg="blue", bold=True)
+                c.run(f"sudo systemctl restart {SERVICE}", pty=True)
+                status(c)
 
 
 @task(hosts=HOSTS)
 def instantiate(c):
     """Instantiate EmmaServer.jl project."""
-    with c.cd(get_srdir(c)):
-        secho("instantiating", fg="green", bold=True)
-        result = c.run(
-            "PATH=~/.juliaup/bin:$PATH make instantiate",
-            # hide=True,
-            warn=True,
-            shell=True,
-            pty=True
-        )
-        if result.failed:
-            secho(f"julia instantiate failed! {result.stderr}", fg="red", bold=True)
-        else:
-            secho(f"success! {result.stdout}", fg="green", bold=True)
+    return instantiate_(c)
 
 
 @task(hosts=HOSTS)
