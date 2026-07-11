@@ -1,8 +1,8 @@
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
 import JuliaWebAPI: APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat, apicall
 import Logging
-import .EmmaEndpoints: make_task_emma_json, make_task_emma_write_json
-import .Chloe2Endpoints: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths
+import .EndpointsEmma: make_task_emma_json, make_task_emma_write_json
+import .EndpointsChloe2: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths
 
 function git_version()
     git_version(dirname(@__FILE__))
@@ -164,6 +164,7 @@ function main(args=ARGS)
         if nchannels < 2
             error("Threads.nthreads() must be > 1 for --use-threads to work [set --threads=n *julia* option]")
         end
+        # read chloe2 artifacts into memory
         get_model_lengths()
 
     end

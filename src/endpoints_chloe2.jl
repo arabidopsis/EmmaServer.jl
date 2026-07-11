@@ -1,4 +1,4 @@
-module Chloe2Endpoints
+module EndpointsChloe2
 export make_task_chloe2_write_json, make_task_chloe2_json, get_model_lengths
 import Distributed: @spawnat
 import FASTX: FASTA
@@ -133,4 +133,4 @@ function make_task_chloe2_write_json(tempdirectory::String=".", use_threads::Boo
     end
     return task_chloe2_write_json
 end
-end # module Chloe2Endpoints
+end # module EndpointsChloe2

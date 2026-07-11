@@ -1,4 +1,4 @@
-module EmmaEndpoints
+module EndpointsEmma
 export make_task_emma_write_json, make_task_emma_json
 import Distributed: @spawnat
 import Emma: emmaone, TempFile, drawgenome, rotate, writeGB, cleanfiles
@@ -160,4 +160,4 @@ function make_task_emma_write_json(tempdirectory::String=".", use_threads::Bool=
     end
     return task_emma_write_json
 end
-end # module EmmaEndpoints
+end # module EndpointsEmma

@@ -4,11 +4,11 @@ export main, get_model_lengths
 include("utils.jl")
 include("clean.jl")
 include("dist.jl")
-include("emma_endpoints.jl")
-include("chloe2_endpoints.jl")
+include("endpoints_emma.jl")
+include("endpoints_chloe2.jl")
 include("cmd.jl")
 
 # need this available in the main module so that the distributed workers can call it
-import .Chloe2Endpoints: get_model_lengths
+import .EndpointsChloe2: get_model_lengths
 
 end # module EmmaServer
