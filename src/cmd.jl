@@ -1,5 +1,5 @@
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
-import JuliaWebAPI: APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat
+import JuliaWebAPI: APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat, apicall
 import Logging
 import .EmmaEndpoints: make_task_emma_json, make_task_emma_write_json
 import .Chloe2Endpoints: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths
@@ -108,9 +108,22 @@ function main(args=ARGS)
         return "OK $(version[1:7])"
     end
 
+    function terminate_later()
+        sleep(0.3) # give the client a chance to receive the response before we exit
+        @info "sending terminate request to $(length(apiclnt)) channels."
+        for api in apiclnt
+            apicall(api, ":terminate")
+        end
+        @info("exiting...")
+        exit(0)
+
+    end
     function terminate()
-        @info "terminated..."
-        @async begin sleep(3); exit(0) end
+        @info "terminating..."
+        # problem here is that we can't terminate all the channels while we
+        # are still being processed by one! So we delegate to an async task
+        # that will terminate all channels after a short sleep.
+        @async terminate_later()
         return "OK\n"
     end
 
