@@ -98,6 +98,7 @@ function main(args=ARGS)
     endpoint = args[:endpoint]
     if endpoint === nothing
         endpoint = "ipc://$(tmpdir)/emma-distributed$(args[:port])"
+        args[:endpoint] = endpoint # for server config output
     end
     @info "endpoint=$(endpoint) port=$(args[:port])"
 
