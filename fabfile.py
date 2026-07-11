@@ -6,9 +6,9 @@ from __future__ import annotations
 # fab update
 
 
-from click import echo # type: ignore
-from click import secho # type: ignore
-from click import style as color # type: ignore
+from click import echo  # type: ignore
+from click import secho  # type: ignore
+from click import style as color  # type: ignore
 from fabric import task  # type: ignore
 
 MACHINES = {
@@ -43,6 +43,11 @@ def update(c):
         if not res.failed and not git_uptodate(res):
             # secho("touching app/app.wsgi", fg="blue", bold=True)
             # c.run("touch app/app.wsgi")
+            secho("instantiate", fg="green", bold=True)
+            result = c.run("make instantiate", warn=True)
+            if result.failed:
+                secho("make instantiate failed!", fg="red", bold=True)
+                return
             secho("restarting EmmaServer.jl", fg="blue", bold=True)
             c.run(f"sudo systemctl restart {SERVICE}", pty=True)
 
@@ -69,15 +74,18 @@ def server_config(c):
     j = json.loads(ret.stdout)
     pprint.pprint(j["data"])
 
+
 @task(hosts=HOSTS)
 def show_service(c):
     """show the EmmaServer.jl service file."""
     c.run(f"cat /etc/systemd/system/{SERVICE}")
 
+
 @task(hosts=HOSTS)
 def ping(c):
     """ping the EmmaServer.jl server."""
     import json
+
     ret = c.run(f"curl --silent {URL}/ping", hide=True)
     j = json.loads(ret.stdout)
     print(j["data"])

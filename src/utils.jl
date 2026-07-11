@@ -1,5 +1,5 @@
 import Random
-import JSON3
+import JSON
 import CodecZlib: GzipDecompressorStream, GzipCompressorStream
 import Logging
 import LoggingExtras
@@ -10,7 +10,7 @@ function atomic_write(path::String, data)
     tmp = joinpath(parent, "$(Random.rand(UInt32))$(ext)")
     try
         maybe_gzwrite(tmp) do io
-            JSON3.write(io, data)
+            JSON.json(io, data)
         end
         mv(tmp, path; force=true)
     catch
