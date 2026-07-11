@@ -1,6 +1,6 @@
+import Logging
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
 import JuliaWebAPI: APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat, apicall
-import Logging
 import .EndpointsEmma: make_task_emma_json, make_task_emma_write_json
 import .EndpointsChloe2: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths
 
@@ -81,7 +81,7 @@ function set_logger(level)
     Logging.global_logger(logger)
 end
 
-function main(args=ARGS)
+function emma_main(args=ARGS)
     Sys.set_process_title("emma-distributed")
     args = get_args(args)
 

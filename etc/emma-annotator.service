@@ -13,7 +13,7 @@ Group={{group}}
 ExecStart={{julia_dir | normpath}}/bin/julia --startup-file=no \
     --project=. \
     --threads={{threads|default(8)}} \
-    srvr.jl \
+    -m EmmaServer \
     --use-threads \
     --port={{port}} {% if watch is defined %}--max-days={{max_days|default(30)}} --watch={{watch|normpath}}{% endif %}
 {# specifications say this should be a synchronous functions #}
