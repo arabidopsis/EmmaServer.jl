@@ -14,6 +14,7 @@ function arm(procs)
         # read Chloe2 model lengths into a global variable so that the workers can use it
         # same function as Chloe2.jl/src/features.jl::get_model_lengths
         EmmaServer.get_model_lengths()
+        EmmaServer.missing_executables() # already checked for in the main process but we need to check for the workers too
     end
 end
 

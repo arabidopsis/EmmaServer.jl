@@ -1,10 +1,11 @@
 # Emma Server
 
 Web server that annotates Mitochondria via [Emma](https://github.com/ian-small/Emma)
+or Chlorplasts via [Chloe2][https://github.com/ian-small/Chloe2.jl]
 e.g. start the server with:
 
 ```bash
-julia --project=. --threads=8 srvr.jl --use-threads --port=9998
+julia --project=. --threads=8 -m EmmaServer --use-threads --port=9998
 ```
 Then run
 

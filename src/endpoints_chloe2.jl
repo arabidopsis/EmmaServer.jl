@@ -1,8 +1,8 @@
 module EndpointsChloe2
-export make_task_chloe2_write_json, make_task_chloe2_json, get_model_lengths
+export make_task_chloe2_write_json, make_task_chloe2_json, get_model_lengths, missing_executables
 import Distributed: @spawnat
 import FASTX: FASTA
-import Chloe2: chloe, get_model_lengths
+import Chloe2: chloe, get_model_lengths, missing_executables
 import Logging
 
 import ..EmmaServer: loglines, atomic_write, maybe_gzread, maybe_gzwrite, local_logger
@@ -71,10 +71,6 @@ end
 function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
     # /chloe2_json?fasta=...&sensitivity=...&reportpseudos=...
     function task_chloe2_json(; fasta::String="", sensitivity::String="false", reportpseudos::String="false")
-        # calling error(msg) results in a code= -2 and a data message of 
-        # "ErrorException(\"chloe2_json: fasta file must be specified\")"
-        # otherwise you will get a code=-2 and a data message of "TaskFailedException(Task (failed) @0x00007e6a6c623850)"
-        # Ugh!
         if fasta == ""
             error("chloe2_json: fasta file must be specified")
         end

@@ -2,7 +2,7 @@ import Logging
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
 import JuliaWebAPI: APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat, apicall
 import .EndpointsEmma: make_task_emma_json, make_task_emma_write_json
-import .EndpointsChloe2: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths
+import .EndpointsChloe2: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths, missing_executables
 
 function git_version()
     git_version(dirname(@__FILE__))
@@ -86,6 +86,12 @@ function emma_main(args=ARGS)
     args = get_args(args)
 
     set_logger(get(LOGLEVELS, lowercase(args[:level]), Logging.Warn))
+
+    missing = missing_executables()
+    if length(missing) > 0
+        @error("missing executables for chloe2: $(join(missing, ", "))")
+        exit(1)
+    end
     
     tmpdir = args[:tempdir]
     if tmpdir === nothing
