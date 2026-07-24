@@ -10,7 +10,11 @@ end
 function git_version(repo_dir::String)
     try
         # older version of git don't have -C
-        strip(read(pipeline(`git -C "$repo_dir" rev-parse HEAD`; stderr=devnull), String))
+        git = Sys.which("git")
+        if git === nothing
+            return "unknown"
+        end 
+        strip(read(pipeline(`$(git) -C "$repo_dir" rev-parse HEAD`; stderr=devnull), String))
         # strip(read(pipeline(`sh -c 'cd "$repo_dir" && git rev-parse HEAD'`, stderr=devnull), String))
     catch e
         "unknown"
