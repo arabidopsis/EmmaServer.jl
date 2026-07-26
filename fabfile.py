@@ -4,6 +4,7 @@ from __future__ import annotations
 # uv tool install fabric --with=click
 # now you can run commands like:
 # fab update
+import time
 
 
 from click import echo  # type: ignore
@@ -63,6 +64,7 @@ def update(c):
             if instantiate_(c):
                 secho("restarting EmmaServer.jl", fg="blue", bold=True)
                 c.run(f"sudo systemctl restart {SERVICE}", pty=True)
+                time.sleep(0.3)
                 status(c)
 
 
