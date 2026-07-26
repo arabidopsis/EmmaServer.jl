@@ -48,7 +48,13 @@ function chloe2_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     gff = String(take!(buf))
     record = read_fasta(IOBuffer(bytes))
     id, len = FASTA.identifier(record), length(FASTA.sequence(record))
-    description = FASTA.description(record)
+
+    description = split(FASTA.description(record), r"\s+"; limit=2)
+    if length(description) == 2
+        description = description[2]
+    else
+        description = description[1]
+    end
 
     ret = Dict(
         "fasta" => fasta,
