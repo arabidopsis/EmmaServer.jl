@@ -47,7 +47,8 @@ function chloe2_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     logs = loglines(String(take!(io_buffer)))
     gff = String(take!(buf))
     record = read_fasta(IOBuffer(bytes))
-    id, len = FASTA.identifier(record), length(FASTA.sequence(record))
+    id = FASTA.identifier(record)
+    seq = FASTA.sequence(record)
 
     description = split(FASTA.description(record), r"\s+"; limit=2)
     if length(description) == 2
@@ -61,7 +62,7 @@ function chloe2_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
         "gff" => gff,
         "logs" => logs,
         "id" => id,
-        "length" => len,
+        "length" => length(seq),
         "description" => description,
         "sensitivity" => args.sensitivity,
         "reportpseudos" => args.reportpseudos
