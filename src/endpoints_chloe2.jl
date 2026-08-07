@@ -63,6 +63,7 @@ function chloe2_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
         "logs" => logs,
         "id" => id,
         "length" => length(seq),
+        "offset" => 0,
         "description" => description,
         "sensitivity" => args.sensitivity,
         "reportpseudos" => args.reportpseudos

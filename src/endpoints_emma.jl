@@ -1,7 +1,7 @@
 module EndpointsEmma
 export make_task_emma_write_json, make_task_emma_json
 import Distributed: @spawnat
-import Emma: emmaone, TempFile, drawgenome, rotate, writeGB, cleanfiles
+import Emma: emmaone, TempFile, drawgenome, rotate, writeGB, cleanfiles, writeGFF
 import FASTX: FASTA
 import Base64: base64decode
 import Logging
@@ -59,8 +59,12 @@ function emma_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     if args.rotate_to != ""
         gffs, genome, offset = rotate(args.rotate_to, gffs, genome)
     end
+    io = IOBuffer()
+    writeGFF(id, gffs, length(genome), io)
+    gff = String(take!(io))
     ret = Dict(
-        "gffs" => gffs,
+        "fasta" => fasta,
+        "gff" => gff,
         "id" => id,
         "length" => length(genome),
         "offset" => offset,
@@ -76,7 +80,7 @@ function emma_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
         writeGB(buf, tempfile.uuid, id, translation_table, gffs)
         ret["gb"] = String(take!(buf))
     end
-    ret["log"] = logs
+    ret["logs"] = logs
     return ret
 end
 
