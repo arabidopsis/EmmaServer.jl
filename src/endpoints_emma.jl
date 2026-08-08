@@ -37,7 +37,7 @@ function _emmatwo(tempfile::TempFile, infile::String, translation_table::Integer
         id, gffs, genome = Logging.with_logger(task_logger) do
             emmaone(tempfile, target, translation_table)
         end
-        return (id, gffs, genome, loglines(String(take!(io_buffer))))
+        return (id, gffs, genome, loglines(String(take!(io_buffer))), target)
     finally
         cleanfiles(tempfile)
     end
@@ -53,7 +53,7 @@ function emma_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     end
     translation_table = args.species == "vertebrate" ? 2 : 5
     tempfile = TempFile(tempdirectory)
-    id, gffs, genome, logs = _emmatwo(tempfile, fasta, translation_table; is_file=args.is_file, tee=tee)
+    id, gffs, genome, logs, record = _emmatwo(tempfile, fasta, translation_table; is_file=args.is_file, tee=tee)
 
     offset = 0
     if args.rotate_to != ""
@@ -62,12 +62,19 @@ function emma_json(tempdirectory::String, args::CmdArgs; tee::Bool=false)
     io = IOBuffer()
     writeGFF(id, gffs, length(genome), io)
     gff = String(take!(io))
+    description = split(FASTA.description(record), r"\s+"; limit=2)
+    if length(description) == 2
+        description = description[2]
+    else
+        description = description[1]
+    end
     ret = Dict(
         "fasta" => fasta,
         "gff" => gff,
         "id" => id,
         "length" => length(genome),
         "offset" => offset,
+        "description" => description,
         "species" => args.species,
         "rotate_to" => args.rotate_to
     )
