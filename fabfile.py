@@ -6,9 +6,7 @@ from __future__ import annotations
 # fab update
 import time
 
-
-from click import echo  # type: ignore
-from click import secho  # type: ignore
+from click import echo, secho  # type: ignore
 from click import style as color  # type: ignore
 from fabric import task  # type: ignore
 
@@ -60,7 +58,7 @@ def update(c):
         echo(color(result.stdout.strip(), fg="green"))
         res = c.run("git pull", warn=True)
 
-        if not res.failed and not git_uptodate(res):
+        if not res.failed and not git_uptodate(res): # noqa: SIM102
             if instantiate_(c):
                 secho("restarting EmmaServer.jl", fg="blue", bold=True)
                 c.run(f"sudo systemctl restart {SERVICE}", pty=True)
