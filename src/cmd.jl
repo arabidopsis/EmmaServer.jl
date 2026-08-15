@@ -197,8 +197,11 @@ function emma_main(args=ARGS)
         # @info "watching $watch every=$(wait)secs"
         @async clean(watch, wait; old=args[:max_days], verbose=false)
     end
+    
     # for config output
     args[:nchannels] = nchannels
+    args[:version] = version[1:7]
+
     # Start the HTTP server in current process (Ctrl+C to interrupt)
     try
         run_http(apiclnt, args[:port])
