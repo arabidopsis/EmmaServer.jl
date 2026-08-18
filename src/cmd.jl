@@ -1,8 +1,10 @@
 import Logging
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
 import JuliaWebAPI: APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat, apicall
+import JuliaWebAPI: InProcTransport, DictMsgFormat, AbstractMsgFormat, AbstractTransport
 import .EndpointsEmma: make_task_emma_json, make_task_emma_write_json
 import .EndpointsChloe2: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths, missing_executables
+import .InProc: create_inproc_responder
 
 function git_version()
     git_version(dirname(@__FILE__))
@@ -13,7 +15,7 @@ function git_version(repo_dir::String)
         git = Sys.which("git")
         if git === nothing
             return "unknown"
-        end 
+        end
         strip(read(pipeline(`$(git) -C "$repo_dir" rev-parse HEAD`; stderr=devnull), String))
         # strip(read(pipeline(`sh -c 'cd "$repo_dir" && git rev-parse HEAD'`, stderr=devnull), String))
     catch e
@@ -85,8 +87,8 @@ function set_logger(level)
     Logging.global_logger(logger)
 end
 
-function emma_main(args=ARGS)
-    Sys.set_process_title("emma-distributed")
+function emmaserver_main(args=ARGS)
+    Sys.set_process_title("emma-server")
     args = get_args(args)
 
     set_logger(get(LOGLEVELS, lowercase(args[:level]), Logging.Warn))
@@ -122,8 +124,11 @@ function emma_main(args=ARGS)
         # need to sleep so the terminate function is fully processed by the APIResponder,
         # and has sent terminate's value back to the client.
         sleep(0.3)
-        @info "sending terminate requests to $(length(apiclnt)) channels."
-        for api in apiclnt
+        @info "sending terminate requests to $(length(apiclnt_t) + length(apiclnt_z)) channels."
+        for api in apiclnt_t
+            apicall(api, ":terminate")
+        end
+        for api in apiclnt_z
             apicall(api, ":terminate")
         end
         @info("exiting... 👋")
@@ -176,17 +181,25 @@ function emma_main(args=ARGS)
         end
         # read chloe2 artifacts into memory
         get_model_lengths()
-
     end
-    apiclnt::Vector{APIInvoker{ZMQTransport, JSONMsgFormat}} = []
+
+    apiclnt_t::Vector{APIInvoker{InProcTransport,DictMsgFormat}} = []
+    apiclnt_z::Vector{APIInvoker{ZMQTransport,JSONMsgFormat}} = []
+
     for i in 1:nchannels
         ep = "$(endpoint)-$(i)"
         @info "starting channel: $(ep)"
-        push!(apiclnt, APIInvoker(ep))
-        # bind=true nid=nothing
-        resp = create_responder(tasks, ep, true, nothing)
+        if ut
+            push!(apiclnt_t, APIInvoker(InProcTransport(Symbol(ep)), DictMsgFormat()))
+            resp = create_inproc_responder(tasks, Symbol(ep))
+        else
+            push!(apiclnt_z, APIInvoker(ep))
+            # bind=true nid=nothing
+            resp = create_responder(tasks, ep, true, nothing)               
+        end
         process(resp; async=true)
     end
+
     watch = args[:watch]
     if watch !== nothing && length(watch) > 0
         watch = [expanduser(w) for w in watch]
@@ -204,7 +217,11 @@ function emma_main(args=ARGS)
 
     # Start the HTTP server in current process (Ctrl+C to interrupt)
     try
-        run_http(apiclnt, args[:port])
+        if ut
+            run_http(apiclnt_t, args[:port])
+        else
+            run_http(apiclnt_z, args[:port])
+        end
     catch e
         # Ctrl+C never gets here :(
         if e isa InterruptException
