@@ -1,6 +1,6 @@
 name = "EmmaServer"
 uuid = "3a998ddf-47f8-4e1b-bd58-743b90103486"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["arabidopsis <ian.castleden@gmail.com>"]
 # Using JSON instead of JSON3 since JuliaWebAPI uses JSON and we want
 # to avoid too many different JSON packages in the same project.

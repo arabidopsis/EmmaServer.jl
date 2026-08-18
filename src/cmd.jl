@@ -11,6 +11,7 @@ import .InProc: create_inproc_responder
 function git_version()
     git_version(dirname(@__FILE__))
 end
+
 function git_version(repo_dir::String)
     try
         # older version of git don't have -C
@@ -24,8 +25,15 @@ function git_version(repo_dir::String)
         "unknown"
     end
 end
+
 function get_args(args::Vector{String}=ARGS)
-    distributed_args = ArgParseSettings(; prog="EmmaServer", autofix_names=true)  # turn "-" into "_" for arg names.
+    version = pkgversion(EmmaServer)
+    distributed_args = ArgParseSettings(;
+        prog="EmmaServer",
+        autofix_names=true,  # turn "-" into "_" for arg names.
+        version=string(version),
+        add_version=true
+    ) 
     #! format: off
     @add_arg_table! distributed_args begin
         "--level", "-l"
@@ -35,7 +43,7 @@ function get_args(args::Vector{String}=ARGS)
         "--workers", "-w"
         arg_type = Int
         default = 4
-        help = "number of distributed processes [default = 4], ignored if --use-threads is specified"
+        help = "number of worker processes/threads [default = 4]"
         "--endpoint", "-e"
         arg_type = String
         help = "endpoint for zmq connection [default = ipc:///{tempdir}/emma-distributed{port}]"

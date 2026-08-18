@@ -1,11 +1,11 @@
 #!/bin/bash
-workers=8
-
+workers=4
+use_threads="--use-threads"
 usage() {
     echo "Usage: $0 [options]"
     echo "Options:"
     echo "  -w, --workers <number>    Set the number of workers [default: $workers]"
-    echo "  -t, --use-threads         Use Julia's multi-threading [default: use Distributed.jl workers]"
+    echo "  -d, --use-distributed     Use Julia's Distributed.jl workers [default: use threads as workers]"
     echo "  -h, --help                Display this help message"
     exit 1
 }
@@ -22,8 +22,8 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             ;;
-        -t|--use-threads)
-            use_threads="--use-threads"
+        -d|--use-distributed)
+            unset use_threads
             shift
             ;;
         -h|--help)
