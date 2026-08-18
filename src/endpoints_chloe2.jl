@@ -104,7 +104,11 @@ end
 
 function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
     # /chloe2_json?fasta=...&sensitivity=...&reportpseudos=...
-    function task_chloe2_json(; fasta::String="", sensitivity::String="false", reportpseudos::String="false")
+    function task_chloe2_json(;
+        fasta::String="",
+        sensitivity::String="false",
+        reportpseudos::String="false"
+    )
         if fasta == ""
             error("chloe2_json: fasta file must be specified")
         end
@@ -129,7 +133,11 @@ function make_task_chloe2_json(tempdirectory::String=".", use_threads::Bool=fals
     return task_chloe2_json
 end
 
-function make_task_chloe2_write_json(tempdirectory::String=".", use_threads::Bool=false; tee::Bool=false)
+function make_task_chloe2_write_json(
+    tempdirectory::String=".",
+    use_threads::Bool=false;
+    tee::Bool=false
+)
     # a reference to this url will call this function:
     # https://127.0.0.1:9998/chloe2_write_json?fasta=...&sensitivity=...&reportpseudos=...&data_path=...
     function task_chloe2_write_json(;

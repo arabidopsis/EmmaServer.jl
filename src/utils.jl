@@ -32,7 +32,7 @@ function maybe_gzwrite(f::Function, filename::String)
         try
             func(o)
         finally
-            close(o)
+            flush(o)
         end
     end
 

@@ -1,9 +1,11 @@
 import Logging
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
-import JuliaWebAPI: APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat, apicall
+import JuliaWebAPI:
+    APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat, apicall
 import JuliaWebAPI: InProcTransport, DictMsgFormat, AbstractMsgFormat, AbstractTransport
 import .EndpointsEmma: make_task_emma_json, make_task_emma_write_json
-import .EndpointsChloe2: make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths, missing_executables
+import .EndpointsChloe2:
+    make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths, missing_executables
 import .InProc: create_inproc_responder
 
 function git_version()
@@ -151,14 +153,14 @@ function emmaserver_main(args=ARGS)
 
     # function, json_response, headers, name
     json_response = true
-    ut = args[:use_threads]
+    use_threads = args[:use_threads]
     tasks = [
         (ping, json_response, JSON_RESP_HDRS, "ping"),
         (config, json_response, JSON_RESP_HDRS , "config"),
-        (make_task_emma_json(tmpdir, ut; tee=tee), json_response, JSON_RESP_HDRS, "emma_json"),
-        (make_task_emma_write_json(tmpdir, ut; tee=tee), json_response, JSON_RESP_HDRS, "emma_write_json"),
-        (make_task_chloe2_json(tmpdir, ut; tee=tee), json_response, JSON_RESP_HDRS, "chloe2_json"),
-        (make_task_chloe2_write_json(tmpdir, ut; tee=tee), json_response, JSON_RESP_HDRS, "chloe2_write_json")
+        (make_task_emma_json(tmpdir, use_threads; tee=tee), json_response, JSON_RESP_HDRS, "emma_json"),
+        (make_task_emma_write_json(tmpdir, use_threads; tee=tee), json_response, JSON_RESP_HDRS, "emma_write_json"),
+        (make_task_chloe2_json(tmpdir, use_threads; tee=tee), json_response, JSON_RESP_HDRS, "chloe2_json"),
+        (make_task_chloe2_write_json(tmpdir, use_threads; tee=tee), json_response, JSON_RESP_HDRS, "chloe2_write_json")
     ]
 
     wt = args[:without_terminate]
@@ -168,7 +170,7 @@ function emmaserver_main(args=ARGS)
     end
    
 
-    if !ut
+    if !use_threads
         workers = args[:workers]
         @info "using $(workers) workers"
         init_workers(workers)
@@ -189,14 +191,14 @@ function emmaserver_main(args=ARGS)
     for i in 1:nchannels
         ep = "$(endpoint)-$(i)"
         @info "starting channel: $(ep)"
-        if ut
+        if use_threads
             key = Symbol(ep)
             push!(apiclnt_t, APIInvoker(InProcTransport(key), DictMsgFormat()))
             resp = create_inproc_responder(tasks, key)
         else
             push!(apiclnt_z, APIInvoker(ep))
             # bind=true nid=nothing
-            resp = create_responder(tasks, ep, true, nothing)               
+            resp = create_responder(tasks, ep, true, nothing)
         end
         process(resp; async=true)
     end
@@ -218,7 +220,7 @@ function emmaserver_main(args=ARGS)
 
     # Start the HTTP server in current process (Ctrl+C to interrupt)
     try
-        if ut
+        if use_threads
             run_http(apiclnt_t, args[:port])
         else
             run_http(apiclnt_z, args[:port])
