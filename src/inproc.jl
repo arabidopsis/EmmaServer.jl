@@ -20,7 +20,7 @@ function default_endpoint(f::Function)
 end
 
 function create_inproc_responder(apispecs::Array, addr::Symbol)::APIResponder{InProcTransport,DictMsgFormat}
-    api = APIResponder(InProcTransport(addr), DictMsgFormat(), nothing; open=false)
+    api = APIResponder(InProcTransport(addr), DictMsgFormat())
     for spec in apispecs
         _add_spec(spec, api)
     end
