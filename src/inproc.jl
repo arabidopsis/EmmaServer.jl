@@ -1,6 +1,6 @@
 module InProc
 export create_inproc_responder
-import JuliaWebAPI: InProcTransport, register, DictMsgFormat, APIResponder
+import JuliaWebAPI: InProcTransport, DictMsgFormat, APIResponder, register
 
 function _add_spec(spec::Tuple, api::APIResponder)
     fn = spec[1]

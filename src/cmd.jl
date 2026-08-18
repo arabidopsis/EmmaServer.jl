@@ -190,8 +190,9 @@ function emmaserver_main(args=ARGS)
         ep = "$(endpoint)-$(i)"
         @info "starting channel: $(ep)"
         if ut
-            push!(apiclnt_t, APIInvoker(InProcTransport(Symbol(ep)), DictMsgFormat()))
-            resp = create_inproc_responder(tasks, Symbol(ep))
+            key = Symbol(ep)
+            push!(apiclnt_t, APIInvoker(InProcTransport(key), DictMsgFormat()))
+            resp = create_inproc_responder(tasks, key)
         else
             push!(apiclnt_z, APIInvoker(ep))
             # bind=true nid=nothing
