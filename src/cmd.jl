@@ -112,6 +112,7 @@ function emmaserver_main(args=ARGS)
     tmpdir = args[:tempdir]
     if tmpdir === nothing
         tmpdir = tempdir()
+        args[:tempdir] = tmpdir
     end
     if !isdir(tmpdir)
         error("no such directory: \"$(tmpdir)\"")
