@@ -2,7 +2,7 @@ module EndpointsChloe2
 export make_task_chloe2_write_json, make_task_chloe2_json, get_model_lengths, missing_executables
 import Distributed: @spawnat
 import FASTX: FASTA
-import Chloe2: chloe, get_model_lengths, missing_executables
+import Chloe2: chloe, get_model_lengths
 import Logging
 
 import ..EmmaServer: loglines, atomic_write, maybe_gzread, maybe_gzwrite, local_logger
@@ -14,6 +14,30 @@ const YES = r"1|t|T|y|Y"
     fasta::String = ""
     sensitivity::Bool = false
     reportpseudos::Bool = false
+end
+
+function missing_executables()::Vector{String}
+    notfound = String[]
+    for cmd in ["hmmsearch", "cmscan", "nhmmer", "cmsearch"]
+        path = Sys.which(cmd)
+        if path === nothing
+            push!(notfound, cmd)
+        end
+    end
+    return notfound
+end
+function ensure_executables()
+    notfound = missing_executables()
+    if length(notfound) > 0
+        s = length(notfound) == 1 ? " is" : "s are"
+        p = length(notfound) == 1 ? "it" : "them"
+        println(
+            stderr,
+            "The following required executable$(s) not in your PATH: \"$(join(notfound, ", "))\". " *
+            "We can't continue without $(p). Please install $(p) and try again."
+        )
+        exit(0)
+    end
 end
 
 function read_fasta(infile::IO)::FASTA.Record
