@@ -5,7 +5,7 @@ import FASTX: FASTA
 import Chloe2: chloe, get_model_lengths
 import Logging
 
-import ..EmmaServer: loglines, atomic_write, maybe_gzread, maybe_gzwrite, local_logger
+import ..EmmaServer: loglines, atomic_write, maybe_gzread, local_logger
 
 # true for strings like 1, true, TRUE, True, yes ,Yes, etc.
 const YES = r"1|t|T|y|Y"

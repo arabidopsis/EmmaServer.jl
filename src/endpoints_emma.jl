@@ -5,7 +5,7 @@ import Emma: emmaone, TempFile, drawgenome, rotate, writeGB, cleanfiles, writeGF
 import FASTX: FASTA
 import Base64: base64decode
 import Logging
-import ..EmmaServer: atomic_write, maybe_gzread, maybe_gzwrite, loglines, local_logger
+import ..EmmaServer: atomic_write, maybe_gzread, loglines, local_logger
 
 @kwdef struct CmdArgs
     fasta::String = ""
