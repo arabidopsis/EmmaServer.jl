@@ -1,11 +1,11 @@
 SHELL=/bin/bash
 JULIADIR=`julia -e 'print(Sys.BINDIR)'`/..
-TEMPDIR=`realpath ../emma-website/instance/datadir`
+INSTANCE=`realpath ../emma-website/instance`
 # requires a python environment with flask-nginx installed
 # e.g. uv tool install flask-nginx
 service:
-	footprint config template -o emma-annotator.service etc/emma-annotator.service \
-		appname=emmaserver port=9998 julia-dir="$(JULIADIR)" threads=8 watch=$(TEMPDIR) max-days=30 \
+	uv run --with=flask-nginx footprint config template -o emma-annotator.service etc/emma-annotator.service \
+		appname=emmaserver port=9998 julia-dir="$(JULIADIR)" instance="$(INSTANCE)" max-days=30 \
 		annotator-dir=. depot-path=$(JULIA_DEPOT_PATH)
 
 # easily terminate the julia server
