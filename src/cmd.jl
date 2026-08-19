@@ -1,8 +1,8 @@
 import Logging
 import ArgParse: ArgParseSettings, @add_arg_table!, parse_args
 import JuliaWebAPI:
-    APIInvoker, run_http, process, create_responder, ZMQTransport, JSONMsgFormat, apicall
-import JuliaWebAPI: InProcTransport, DictMsgFormat, AbstractMsgFormat, AbstractTransport
+    APIInvoker, run_http, process, apicall
+import JuliaWebAPI: InProcTransport, DictMsgFormat
 import .EndpointsEmma: make_task_emma_json, make_task_emma_write_json
 import .EndpointsChloe2:
     make_task_chloe2_json, make_task_chloe2_write_json, get_model_lengths, missing_executables
@@ -44,9 +44,9 @@ function get_args(args::Vector{String}=ARGS)
         arg_type = Int
         default = 4
         help = "number of worker processes/threads [default = 4]"
-        "--endpoint", "-e"
-        arg_type = String
-        help = "endpoint for zmq connection [default = ipc:///{tempdir}/emma-distributed{port}]"
+        # "--endpoint", "-e"
+        # arg_type = String
+        # help = "endpoint for zmq connection [default = ipc:///{tempdir}/emma-distributed{port}]"
         "--port", "-p"
         arg_type = Int
         default = 9998
@@ -118,12 +118,15 @@ function emmaserver_main(args=ARGS)
         error("no such directory: \"$(tmpdir)\"")
     end
 
-    endpoint = args[:endpoint]
-    if endpoint === nothing
-        endpoint = "ipc://$(tmpdir)/emma-distributed$(args[:port])"
-        args[:endpoint] = endpoint # for server config output
-    end
+    # endpoint = args[:endpoint]
+    # if endpoint === nothing
+    #     endpoint = "ipc://$(tmpdir)/emma-distributed$(args[:port])"
+    #     args[:endpoint] = endpoint # for server config output
+    # end
+    
+    endpoint = "endpoint"
     @info "endpoint=$(endpoint) port=$(args[:port])"
+
 
     version = git_version()
 
@@ -135,11 +138,8 @@ function emmaserver_main(args=ARGS)
         # need to sleep so the terminate function is fully processed by the APIResponder,
         # and has sent terminate's value back to the client.
         sleep(0.3)
-        @info "sending terminate requests to $(length(apiclnt_t) + length(apiclnt_z)) channels."
-        for api in apiclnt_t
-            apicall(api, ":terminate")
-        end
-        for api in apiclnt_z
+        @info "sending terminate requests to $(length(apiclnt)) channels."
+        for api in apiclnt
             apicall(api, ":terminate")
         end
         @info("exiting... 👋")
@@ -194,21 +194,14 @@ function emmaserver_main(args=ARGS)
         get_model_lengths()
     end
 
-    apiclnt_t::Vector{APIInvoker{InProcTransport,DictMsgFormat}} = []
-    apiclnt_z::Vector{APIInvoker{ZMQTransport,JSONMsgFormat}} = []
+    apiclnt::Vector{APIInvoker{InProcTransport,DictMsgFormat}} = []
 
     for i in 1:nchannels
         ep = "$(endpoint)-$(i)"
         @info "starting channel: $(ep)"
-        if use_threads
-            key = Symbol(ep)
-            push!(apiclnt_t, APIInvoker(InProcTransport(key), DictMsgFormat()))
-            resp = create_inproc_responder(tasks, key)
-        else
-            push!(apiclnt_z, APIInvoker(ep))
-            # bind=true nid=nothing
-            resp = create_responder(tasks, ep, true, nothing)
-        end
+        key = Symbol(ep)
+        push!(apiclnt, APIInvoker(InProcTransport(key), DictMsgFormat()))
+        resp = create_inproc_responder(tasks, key)
         process(resp; async=true)
     end
 
@@ -229,11 +222,7 @@ function emmaserver_main(args=ARGS)
 
     # Start the HTTP server in current process (Ctrl+C to interrupt)
     try
-        if use_threads
-            run_http(apiclnt_t, args[:port])
-        else
-            run_http(apiclnt_z, args[:port])
-        end
+        run_http(apiclnt, args[:port])
     catch e
         # Ctrl+C never gets here :(
         if e isa InterruptException
