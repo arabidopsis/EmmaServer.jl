@@ -82,6 +82,7 @@ def status(c):
 def restart(c):
     """restart emma-annotator service."""
     c.run(f"sudo systemctl restart {SERVICE}", pty=True)
+    time.sleep(0.3)
     status(c)
 
 

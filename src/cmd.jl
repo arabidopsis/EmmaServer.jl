@@ -226,7 +226,7 @@ function emmaserver_main(args=ARGS)
     catch e
         # Ctrl+C never gets here :(
         if e isa InterruptException
-            @info "Abort!"
+            @info "InterruptException: exiting..."
             exit(0)
         end
         rethrow()
