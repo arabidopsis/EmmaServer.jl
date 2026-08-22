@@ -10,6 +10,7 @@ service:
 
 # easily terminate the julia server
 terminate:
+	# killall -s SIGHUP emma-server
 	@/usr/bin/curl --silent http://127.0.0.1:9998/terminate
 
 # run this to install all dependencies in the current environment

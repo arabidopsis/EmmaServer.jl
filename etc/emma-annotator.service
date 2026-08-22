@@ -16,9 +16,9 @@ ExecStart={{julia_dir | normpath}}/bin/julia --startup-file=no \
     -m EmmaServer \
     --use-threads \
     --port={{port}} {% if instance is defined %}--max-days={{max_days|default(30)}} --watch={{instance|normpath}}/datadir{% endif %}
-{# specifications say this should be a synchronous functions #}
+{# specifications say this should be a synchronous function #}
 ExecStop=/usr/bin/curl --silent http://127.0.0.1:{{port}}/terminate
-KillSignal=SIGINT
+KillSignal=SIGHUP
 KillMode=control-group
 WorkingDirectory={{annotator_dir|default('.')|normpath}}
 SyslogIdentifier={{appname}}-annotate
