@@ -105,7 +105,7 @@ function emmaserver_main(args=ARGS)
 
     missing = missing_executables()
     if length(missing) > 0
-        @error("missing executables for chloe2: $(join(missing, ", "))")
+        @error "missing executables for chloe2: $(join(missing, ", "))"
         exit(1)
     end
     
@@ -115,7 +115,8 @@ function emmaserver_main(args=ARGS)
         args[:tempdir] = tmpdir
     end
     if !isdir(tmpdir)
-        error("no such directory: \"$(tmpdir)\"")
+       @error "no such directory: \"$(tmpdir)\""
+       exit(1)
     end
 
     # endpoint = args[:endpoint]
@@ -188,7 +189,8 @@ function emmaserver_main(args=ARGS)
         @info "using $(Threads.nthreads()) threads"
         nchannels = Threads.nthreads()
         if nchannels < 2
-            error("Threads.nthreads() must be > 1 for --use-threads to work [set --threads=n *julia* option]")
+            @error "Threads.nthreads() must be > 1 for --use-threads to work [set --threads=n *julia* option]"
+            exit(1)
         end
         # read chloe2 artifacts into memory
         get_model_lengths()
@@ -210,7 +212,8 @@ function emmaserver_main(args=ARGS)
         watch = [expanduser(w) for w in watch]
         wait = args[:sleep_hours] * 60 * 60
         if wait < 600
-            error("can't sleep less than 600 seconds: $(wait)")
+            @error "can't sleep less than 600 seconds: $(wait)"
+            exit(1)
         end
         # @info "watching $watch every=$(wait)secs"
         @async clean(watch, wait; old=args[:max_days], verbose=false)
