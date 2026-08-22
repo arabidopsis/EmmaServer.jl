@@ -28,19 +28,14 @@ RestartSec=30 {# if there is a bug in the service then don't churn... #}
 # we may be processing something
 TimeoutStopSec={{stopwait|default(30)}}
 
-{% if not backend|default(false) %}
-{#- the backend if annotator does logging -#}
+{% if instance is defined %}
 StandardOutput=append:{{instance|normpath}}/logs/{{appname}}-annotate.log
-# redirect_stderr=true
 StandardError=append:{{instance|normpath}}/logs/{{appname}}-error.log
-# StandardError=inherit
-# stdout_logfile_maxbytes=10MB
-# stdout_logfile_backups=3
 {% else -%}
 StandardOutput=syslog
 StandardError=syslog
 {% endif %}
-{#Environment="JULIA_NUM_THREADS={{threads|default(8)}}"#}
+{# Environment="JULIA_NUM_THREADS={{threads|default(8)}}" #}
 Environment="JULIA_DEPOT_PATH={{depot_path|default(homedir ~'/.julia')}}"
 Environment="USER={{user}}"
 Environment="HOME={{homedir}}"
