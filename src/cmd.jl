@@ -63,10 +63,18 @@ function get_args(args::Vector{String}=ARGS)
         arg_type = Float32
         default = 30.0
         help = "files older than this in days will be removed (see --watch)"
+        "--max-mb"
+        arg_type = Float32
+        default = 0.0
+        help = "maximum total size of files in MB (see --watch) [0 means no limit]"
         "--sleep-hours"
         arg_type = Float32
         default = 2.0
         help = "sleep in hours between directory sweep (see --watch)"
+        "--sleep-days"
+        arg_type = Float32
+        default = 7.0
+        help = "sleep in days between max directory size checks (see --watch and --max-mb)"
         # "--console"
         # action = :store_true
         # help = "use the console logger"
@@ -217,6 +225,9 @@ function emmaserver_main(args=ARGS)
         end
         # @info "watching $watch every=$(wait)secs"
         @async clean(watch, wait; old=args[:max_days], verbose=false)
+        if args[:max_mb] > 0
+            @async maxsize(watch, args[:sleep_days]; max_mb=args[:max_mb], verbose=false)
+        end
     end
     
     # for config output
