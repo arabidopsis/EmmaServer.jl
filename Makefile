@@ -4,8 +4,8 @@ INSTANCE=`realpath ../emma-website/instance`
 # requires uv to be installed
 service:
 	uv run --with=flask-nginx footprint config template -o emma-annotator.service etc/emma-annotator.service \
-		appname=emmaserver port=9998 julia-dir="$(JULIADIR)" instance="$(INSTANCE)" max-days=30 \
-		annotator-dir=. depot-path=$(JULIA_DEPOT_PATH)
+		appname=emmaserver port=9998 julia-dir="$(JULIADIR)" annotator-dir=. depot-path=$(JULIA_DEPOT_PATH) \
+		instance="$(INSTANCE)" max-days=30 max-mb=500 sleep-days=3
 
 # easily terminate the julia server
 terminate:

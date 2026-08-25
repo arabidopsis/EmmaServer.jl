@@ -15,7 +15,11 @@ ExecStart={{julia_dir | normpath}}/bin/julia --startup-file=no \
     --threads={{threads|default('auto')}} \
     -m EmmaServer \
     --use-threads \
-    --port={{port}} {% if instance is defined %}--max-days={{max_days|default(30)}} --watch={{instance|normpath}}/datadir{% endif %}
+    --port={{port}} 
+    {%- if instance is defined %} --max-days={{max_days|default(30)}} \
+    --max-mb={{max_mb|default(2000)}} --sleep-days={{sleep_days|default(7)}} \
+    --watch={{instance|normpath}}/datadir
+    {% endif %}
 {# specifications say this should be a synchronous function #}
 ExecStop=/usr/bin/curl --silent http://127.0.0.1:{{port}}/terminate
 KillSignal=SIGHUP
