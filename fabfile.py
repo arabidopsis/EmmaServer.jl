@@ -71,6 +71,11 @@ def instantiate(c):
     """Instantiate EmmaServer.jl project."""
     return instantiate_(c)
 
+@task(hosts=HOSTS)
+def logs(c, n=30):
+    """Show the last n (30) log entries [use -n <number>]."""
+    c.run(f"sudo journalctl -r -u {SERVICE} -n {n}", pty=True)
+
 
 @task(hosts=HOSTS)
 def status(c):
