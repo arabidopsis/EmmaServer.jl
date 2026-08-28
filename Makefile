@@ -22,4 +22,4 @@ instantiate:
 resolve:
 	@$(JULIADIR)/bin/julia --project=. -e 'using Pkg; Pkg.resolve()'
 
-.PHONY: service terminate instantiate resolve install uninstall
+.PHONY: systemd terminate instantiate resolve install uninstall

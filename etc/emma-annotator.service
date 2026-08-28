@@ -1,6 +1,6 @@
 [Unit]
 Description=annotator for {{appname}}
-After={{after|default('network.target')}}
+After={{after|default('network-online.target')}}
 StartLimitBurst=5
 StartLimitIntervalSec={{30*5}}
 
