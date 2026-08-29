@@ -41,14 +41,14 @@ function get_args(args::Vector{String}=ARGS)
         default = "info"
         help = "log level (info,warn,error,debug)"
         "--workers", "-w"
-        arg_type = Int
+        arg_type = Integer
         default = 4
         help = "number of worker processes/threads [default = 4]"
         # "--endpoint", "-e"
         # arg_type = String
         # help = "endpoint for zmq connection [default = ipc:///{tempdir}/emma-distributed{port}]"
         "--port", "-p"
-        arg_type = Int
+        arg_type = Integer
         default = 9998
         help = "http connection port"
         "--tempdir", "-t"
@@ -60,19 +60,19 @@ function get_args(args::Vector{String}=ARGS)
         action = :append_arg
         help = "cleanup files in the watch directory (can be specified multiple times)"
         "--max-days"
-        arg_type = Float32
+        arg_type = Real
         default = 30.0
         help = "files older than this in days will be removed (see --watch)"
         "--max-mb"
-        arg_type = Float32
+        arg_type = Real
         default = 0.0
         help = "maximum total size of files in MB (see --watch) [0 means no limit]"
         "--sleep-hours"
-        arg_type = Float32
+        arg_type = Real
         default = 2.0
         help = "sleep in hours between directory sweep (see --watch)"
         "--sleep-days"
-        arg_type = Float32
+        arg_type = Real
         default = 7.0
         help = "sleep in days between max directory size checks (see --watch and --max-mb)"
         # "--console"
