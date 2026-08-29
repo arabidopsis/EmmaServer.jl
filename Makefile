@@ -5,7 +5,7 @@ INSTANCE=`realpath ../emma-website/instance`
 systemd:
 	uv run --with=flask-nginx footprint config template -o emma-annotator.service etc/emma-annotator.service \
 		appname=emmaserver port=9998 julia-dir="$(JULIADIR)" annotator-dir=. depot-path=$(JULIA_DEPOT_PATH) \
-		instance="$(INSTANCE)" max-days=30 max-mb=500 sleep-days=3
+		instance="$(INSTANCE)" max-days=30 max-mb=500 sleep-days=3 sleep-hours=6
 install:
 	uv run --with=flask-nginx footprint config systemd-install emma-annotator.service
 uninstall:
