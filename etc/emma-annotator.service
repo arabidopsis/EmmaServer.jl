@@ -10,7 +10,7 @@ User={{user}}
 Group={{group}}
 {% endif -%}
 {%- set port = port|default(9998) -%}
-ExecStart={{julia_dir | normpath}}/bin/julia --startup-file=no \
+ExecStart={{julia_dir | default(homedir ~ '/.juliaup') | normpath }}/bin/julia --startup-file=no \
     --project=. \
     --threads={{threads|default('auto')}} \
     -m EmmaServer \
